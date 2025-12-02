@@ -4,7 +4,7 @@
 #include "TabItems.h"
 #include "Inventory.h"
 #include "TestCam.h"
-#include "FmodSound.h"
+//#include "FmodSound.h"
 
 GUIManager::GUIManager()
 {
@@ -45,14 +45,14 @@ void GUIManager::render(GUITexture idx, bool click_flag)
 		if (click_slot > -1)
 			t_item->moveItem(click_slot, vec3(ndc_xy.first, ndc_xy.second, 0));
 		if (flag == false && click_flag && block) {
-			FmodSound::playSelectedSound();
+			//FmodSound::playSelectedSound();
 			click_slot = s_idx;
 			flag = true;
 			t_item->moveItem(click_slot, vec3(ndc_xy.first, ndc_xy.second, 0));
 			t_item->getItem(click_slot)->setFreeMove(true);
 		}
 		else if (flag && click_flag && s_idx > -1) {
-			FmodSound::playSelectedSound();
+			//FmodSound::playSelectedSound();
 			if (s_idx == click_slot)
 				t_item->setSlotItem(click_slot, t_item->getSlotItem(click_slot));
 			else {

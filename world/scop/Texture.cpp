@@ -1,7 +1,9 @@
 #include "pch.h"
 #include "Texture.h"
 #include "stb_image.h"
-#include <directxtk/DDSTextureLoader.h> // 큐브맵 읽을 때 필요
+#include <directxtk/DDSTextureLoader.h> 
+// 큐브맵 읽을 때 필요 (vcpkg install directxtk:x64-windows 로 설치)
+// vcpkg install intergrate -> visual studio에서도 사용
 
 Texture::Texture(
 	ComPtr<ID3D11Device> device, 
@@ -17,7 +19,6 @@ Texture::Texture(
 		&meta_data,
 		img
 	);
-	CHECK(hr);
 
 	hr = CreateShaderResourceView(
 		this->device.Get(),

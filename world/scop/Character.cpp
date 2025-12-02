@@ -297,7 +297,6 @@ void Character::update(vec3 const& dir)
 	int space_flag = 0;
 	static bool pv = false;
 	bool bs = GetAsyncKeyState(VK_SPACE) & 0x8000;
-	test_flag = bs;
 	if (bs && pv == false && 
 		this->aabb_collision->checkBottom(this->c_pos)) {
 		space_flag = 1;
@@ -326,6 +325,7 @@ void Character::update(vec3 const& dir)
 		gv = 0;
 	speed = move_dir.Length();
 	move_dir = XMVector3Normalize(move_dir);
+	
 	this->c_pos = this->aabb_collision->calcCollision(
 		this->c_pos, move_dir, speed * delta_time);
 	this->pos = Mat::CreateTranslation(this->c_pos);

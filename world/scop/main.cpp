@@ -16,7 +16,7 @@
 #include "StartScene.h"
 #include "BlockTextureArray.h"
 
-#include "FmodSound.h"
+//#include "FmodSound.h"
 
 #include "json.hpp"
 
@@ -103,12 +103,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     move_check = true;
     bool click_check = false;
 
-
-	FmodSound::init();
-	FmodSound::playBGM();
+	//FmodSound::init();
+	//FmodSound::playBGM();
     while (msg.message != WM_QUIT)
     {
-        FmodSound::playNextBGM();
+        //FmodSound::playNextBGM();
         if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
@@ -126,10 +125,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                         start_scene_flag = false;
                         fix_flag = true;
                         start_scene.~StartScene();
-                        FmodSound::playSelectedSound();
+                        //FmodSound::playSelectedSound();
                     }
                     else if (start_scene.checkClickExitButton()) {
-                        FmodSound::release();
+                        //FmodSound::release();
                         exit(0);
                     }
                 }
@@ -230,7 +229,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
 
    // 항상 화면이 위에 뜨게함
-   SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+   //SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
    return TRUE;
 }
 
@@ -281,7 +280,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 else {
                     if (start_scene_flag == false)
                         p_terrain->saveGame();
-                    FmodSound::release();
+                    //FmodSound::release();
                     DestroyWindow(hWnd);
                 }
             }

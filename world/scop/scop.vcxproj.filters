@@ -415,6 +415,9 @@
     <Filter Include="리소스 파일\file">
       <UniqueIdentifier>{6d9e75a4-98d0-4548-833d-7c67952ced9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\Utils\stb_image">
+      <UniqueIdentifier>{fdad2319-76db-48df-b2fd-c07980d7cafc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -713,6 +716,12 @@
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>헤더 파일\Utils\JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>헤더 파일\Utils\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image_write.h">
+      <Filter>헤더 파일\Utils\stb_image</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

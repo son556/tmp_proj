@@ -6,7 +6,7 @@
 #include "TestCam.h"
 #include "DeferredGraphics.h"
 #include "Entity.h"
-#include "FmodSound.h"
+//#include "FmodSound.h"
 
 Terrain::Terrain(
 	int size_w,
@@ -143,7 +143,7 @@ void Terrain::putBlock(
 				this->m_manager->l_system.BFSLightBlockAdd(cidx, bidx, v_idx);
 			v_idx.push_back(cidx);
 			this->m_manager->chunksSetVerticesAndIndices(v_idx, 0, v_idx.size());
-			FmodSound::playPutBlockSound(BlockType::AIR); // 놓는 소리 고정
+			//FmodSound::playPutBlockSound(BlockType::AIR); // 놓는 소리 고정
 		}
 	}
 }
@@ -210,7 +210,7 @@ void Terrain::deleteBlock(vec3 const& ray_pos, vec3 const& ray_dir)
 		if (type > 0 && type != BlockType::OAK_LEAVES)
 			this->m_manager->l_system.BFSLightBlockDelete(widx.c_idx, widx.b_idx, v_idx);
 		this->m_manager->chunksSetVerticesAndIndices(v_idx, 0, v_idx.size());
-		FmodSound::playPutBlockSound(static_cast<BlockType>(type));
+		//FmodSound::playPutBlockSound(static_cast<BlockType>(type));
 	}
 }
 

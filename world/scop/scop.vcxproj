@@ -219,6 +219,8 @@
     <ClInclude Include="SsaoRender.h" />
     <ClInclude Include="SsaoBlur.h" />
     <ClInclude Include="StartScene.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="StructuredBuffer.h" />
     <ClInclude Include="Sun.h" />
     <ClInclude Include="SunMoon.h" />

@@ -188,7 +188,6 @@ TextureArray::TextureArray(
 
         // 실제로 만들어진 MipLevels를 확인
         this->texture_arr->GetDesc(&txtDesc);
-        // cout << txtDesc.MipLevels << endl;
 
         // StagingTexture를 만들어서 하나씩 복사합니다.
         for (size_t i = 0; i < imageArray.size(); i++) {
