@@ -158,6 +158,113 @@ void GeoRender::render(
 		this->parallaxRender(cam->getPos());
 }
 
+void GeoRender::setPipe(bool ccw_flag)
+{
+	ComPtr<ID3D11DeviceContext> context = 
+		d_graphic->getContext();
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(this->input_layout->getComPtr().Get());
+	context->VSSetShader(
+		this->vertex_shader->getComPtr().Get(),
+		nullptr,
+		0
+	);
+	if (ccw_flag == false)
+	{
+		context->RSSetState(this->rasterizer_state->getComPtr().Get());
+	}
+	else
+	{
+		context->RSSetState(this->ccw_rasterizer_state->getComPtr().Get());
+	}
+
+	context->PSSetShader(
+		this->pixel_shader->getComPtr().Get(),
+		nullptr,
+		0
+	);
+	context->PSSetSamplers(
+		0,
+		1,
+		this->linear_state->getComPtr().GetAddressOf()
+	);
+	context->PSSetShaderResources(
+		0,
+		1,
+		BlockTextureArray::getBlocksColor()->getComPtr().GetAddressOf()
+	);
+	context->PSSetShaderResources(
+		1,
+		1,
+		BlockTextureArray::getBlocksS()->getComPtr().GetAddressOf()
+	);
+	context->PSSetShaderResources(
+		2,
+		1,
+		BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf()
+	);
+
+	//context->HSSetShader(
+	//	this->hull_shader->getComPtr().Get(),
+	//	nullptr,
+	//	0
+	//);
+	//context->DSSetShader(
+	//	this->domain_shader->getComPtr().Get(),
+	//	nullptr,
+	//	0
+	//);
+	//// 실제 vertex위치 옮기는 경우
+	//context->DSSetShaderResources(0, 1,
+	//	BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf());
+}
+
+void GeoRender::setConstantBuffer(CamType type)
+{
+	ComPtr<ID3D11DeviceContext> context = 
+		d_graphic->getContext();
+
+	// set hs constant
+	vec3 cam_pos = cam->getPos();
+	vec4 eye;
+	eye.x = cam_pos.x;
+	eye.y = cam_pos.y;
+	eye.z = cam_pos.z;
+	eye.w = 1;
+	/*this->eye_pos_cbuffer->update(eye);
+	context->HSSetConstantBuffers(0, 1,
+		this->eye_pos_cbuffer->getComPtr().GetAddressOf());*/
+	
+	// set ds constant
+	/*context->DSSetConstantBuffers(0, 1,
+		cam->getConstantBuffer(type)->getComPtr().GetAddressOf());
+	context->DSSetConstantBuffers(1, 1,
+		this->eye_pos_cbuffer->getComPtr().GetAddressOf());*/
+
+	context->VSSetConstantBuffers(0, 1, cam->getConstantBuffer(type)->getComPtr().GetAddressOf());
+}
+
+void GeoRender::parallaxRender(vec3 const& cam_pos)
+{
+	this->parallax_mapping->setRTV();
+	ComPtr<ID3D11DeviceContext> context = d_graphic->getContext();
+	context->PSSetShaderResources(0, 1,
+		BlockTextureArray::getBlocksColor()->getComPtr().GetAddressOf());
+	context->PSSetShaderResources(1, 1,
+		BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf());
+	context->PSSetShaderResources(2, 1,
+		BlockTextureArray::getBlocksS()->getComPtr().GetAddressOf());
+	context->PSSetShaderResources(3, 1,
+		this->d_buffer->getSRV(5).GetAddressOf());
+	context->PSSetShaderResources(4, 1,
+		this->d_buffer->getSRV(1).GetAddressOf());
+	context->PSSetShaderResources(5, 1,
+		this->d_buffer->getSRV(6).GetAddressOf());
+	context->PSSetShaderResources(6, 1,
+		this->d_buffer->getSRV(7).GetAddressOf());
+	this->parallax_mapping->render();
+}
+
 void GeoRender::setParallaxFlag(bool flag)
 {
 	this->parallax_flag = flag;
@@ -195,103 +302,3 @@ ComPtr<ID3D11RenderTargetView> GeoRender::getRTV(RTVIndex idx)
 	return this->d_buffer->getRTV(index);
 }
 
-void GeoRender::setPipe(bool ccw_flag)
-{
-	ComPtr<ID3D11DeviceContext> context = 
-		d_graphic->getContext();
-	context->IASetPrimitiveTopology(
-		D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
-	context->IASetInputLayout(this->input_layout->getComPtr().Get());
-	context->VSSetShader(
-		this->vertex_shader->getComPtr().Get(),
-		nullptr,
-		0
-	);
-	if (ccw_flag == false)
-		context->RSSetState(this->rasterizer_state->getComPtr().Get());
-	else
-		context->RSSetState(this->ccw_rasterizer_state->getComPtr().Get());
-	context->PSSetShader(
-		this->pixel_shader->getComPtr().Get(),
-		nullptr,
-		0
-	);
-	context->PSSetSamplers(
-		0,
-		1,
-		this->linear_state->getComPtr().GetAddressOf()
-	);
-	context->PSSetShaderResources(
-		0,
-		1,
-		BlockTextureArray::getBlocksColor()->getComPtr().GetAddressOf()
-	);
-	context->PSSetShaderResources(
-		1,
-		1,
-		BlockTextureArray::getBlocksS()->getComPtr().GetAddressOf()
-	);
-	context->PSSetShaderResources(
-		2,
-		1,
-		BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf()
-	);
-	context->HSSetShader(
-		this->hull_shader->getComPtr().Get(),
-		nullptr,
-		0
-	);
-	context->DSSetShader(
-		this->domain_shader->getComPtr().Get(),
-		nullptr,
-		0
-	);
-
-	// 실제 vertex위치 옮기는 경우
-	context->DSSetShaderResources(0, 1,
-		BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf());
-}
-
-void GeoRender::setConstantBuffer(CamType type)
-{
-	ComPtr<ID3D11DeviceContext> context = 
-		d_graphic->getContext();
-
-	// set hs constant
-	vec3 cam_pos = cam->getPos();
-	vec4 eye;
-	eye.x = cam_pos.x;
-	eye.y = cam_pos.y;
-	eye.z = cam_pos.z;
-	eye.w = 1;
-	this->eye_pos_cbuffer->update(eye);
-	context->HSSetConstantBuffers(0, 1,
-		this->eye_pos_cbuffer->getComPtr().GetAddressOf());
-	
-	// set ds constant
-	context->DSSetConstantBuffers(0, 1,
-		cam->getConstantBuffer(type)->getComPtr().GetAddressOf());
-	context->DSSetConstantBuffers(1, 1,
-		this->eye_pos_cbuffer->getComPtr().GetAddressOf());
-}
-
-void GeoRender::parallaxRender(vec3 const& cam_pos)
-{
-	this->parallax_mapping->setRTV();
-	ComPtr<ID3D11DeviceContext> context = d_graphic->getContext();
-	context->PSSetShaderResources(0, 1,
-		BlockTextureArray::getBlocksColor()->getComPtr().GetAddressOf());
-	context->PSSetShaderResources(1, 1,
-		BlockTextureArray::getBlocksNormal()->getComPtr().GetAddressOf());
-	context->PSSetShaderResources(2, 1,
-		BlockTextureArray::getBlocksS()->getComPtr().GetAddressOf());
-	context->PSSetShaderResources(3, 1,
-		this->d_buffer->getSRV(5).GetAddressOf());
-	context->PSSetShaderResources(4, 1,
-		this->d_buffer->getSRV(1).GetAddressOf());
-	context->PSSetShaderResources(5, 1,
-		this->d_buffer->getSRV(6).GetAddressOf());
-	context->PSSetShaderResources(6, 1,
-		this->d_buffer->getSRV(7).GetAddressOf());
-	this->parallax_mapping->render();
-}

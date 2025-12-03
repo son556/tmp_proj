@@ -98,6 +98,10 @@ void Map::vertexAndIndexGenerator(
 					x, y, z, type,
 					vertices
 				);
+				if (indices) {
+					Block::addBlockFaceIndices(*index, *indices);
+					*index += 4;
+				}
 			}
 		}
 	}
@@ -246,12 +250,14 @@ void Map::chunksSetVerticesAndIndices(
 	vector<uint32> indices;
 	vector<uint32> s_indices;
 	uint32 s_idx;
+	uint32 idx;
 	ed = min(ed, v_idx.size());
 	for (int i = st; i < ed; i++) {
 		Index2 const& c_idx = v_idx[i];
 		this->m_info.chunks[c_idx.y][c_idx.x]->vertices_idx = 0;
 		Index2 apos = this->m_info.chunks[c_idx.y][c_idx.x]->chunk_pos;
 		s_idx = 0;
+		idx = 0;
 		for (int dir = 0; dir < 6; dir++) {
 			Index2 pos = apos + Index2(16 * move_arr[dir].x,
 				16 * move_arr[dir].z);
@@ -261,7 +267,9 @@ void Map::chunksSetVerticesAndIndices(
 				adj_idx,
 				move_arr[dir],
 				dir,
-				vertices_geo
+				vertices_geo,
+				&indices,
+				&idx
 			);
 			this->vertexShadowGenerator(
 				c_idx,
@@ -277,7 +285,8 @@ void Map::chunksSetVerticesAndIndices(
 		this->vertexAndIndexGeneratorWater(c_idx);
 		this->m_info.chunks[c_idx.y][c_idx.x]->createGeoBuffer(
 			d_graphic->getDevice(),
-			vertices_geo
+			vertices_geo,
+			indices
 		);
 		this->m_info.chunks[c_idx.y][c_idx.x]->createShadowBuffer(
 			d_graphic->getDevice(),
@@ -287,6 +296,7 @@ void Map::chunksSetVerticesAndIndices(
 		vertices_shadow.clear();
 		vertices_geo.clear();
 		s_indices.clear();
+		indices.clear();
 	}
 }
 

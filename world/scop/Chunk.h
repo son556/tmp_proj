@@ -17,7 +17,8 @@ public: // create
 	);
 	void createGeoBuffer(
 		ComPtr<ID3D11Device> const& device,
-		vector<VertexGeo> const& vertices
+		vector<VertexGeo> const& vertices,
+		vector<uint32> const& indices
 	);
 	void createShadowBuffer(
 		ComPtr<ID3D11Device> const& device,
@@ -39,6 +40,7 @@ public:
 
 private:
 	shared_ptr<Buffer<VertexGeo>> geo_vbuffer;
+	shared_ptr<Buffer<uint32>> geo_ibuffer;
 	shared_ptr<Buffer<VertexShadow>> shadow_vbuffer;
 	shared_ptr<Buffer<uint32>> shadow_ibuffer;
 };

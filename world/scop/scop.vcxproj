@@ -160,7 +160,6 @@
     <ClInclude Include="CollisionUtils.h" />
     <ClInclude Include="Composite.h" />
     <ClInclude Include="CompositeRenderer.h" />
-    <ClInclude Include="ComputeShader.h" />
     <ClInclude Include="CubeMap.h" />
     <ClInclude Include="DeferredGraphics.h" />
     <ClInclude Include="DeferredRendering.h" />
@@ -263,7 +262,6 @@
     <ClCompile Include="CollisionUtils.cpp" />
     <ClCompile Include="Composite.cpp" />
     <ClCompile Include="CompositeRenderer.cpp" />
-    <ClCompile Include="ComputeShader.cpp" />
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="DeferredGraphics.cpp" />
     <ClCompile Include="DeferredRendering.cpp" />
