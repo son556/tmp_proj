@@ -6,12 +6,11 @@
 
 
 #include "Terrain.h"
-#include "time.h"
+#include "GameTime.h"
 #include "TestCam.h"
-#include "Time.h"
-#include "DeferredGraphics.h" 
-#include "Entity.h"
-#include "CompositeRenderer.h"
+#include "DeferredGraphics.h"
+#include "World/Entity/Entity.h"
+#include "CompositeRenderer/CompositeRenderer.h"
 #include "GUIManager.h"
 #include "StartScene.h"
 #include "BlockTextureArray.h"
