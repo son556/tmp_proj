@@ -85,11 +85,17 @@ void Graphics::createDeviceAndSwapChain()
 	desc.Windowed = TRUE;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
+	UINT createDeviceFlags = 0;
+
+#ifdef _DEBUG
+	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		0,
+		createDeviceFlags,
 		nullptr,
 		0,
 		D3D11_SDK_VERSION,

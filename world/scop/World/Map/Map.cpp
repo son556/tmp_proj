@@ -49,13 +49,15 @@ void Map::terrainSetVerticesAndIndices()
 	int t = c_cnt / this->thread_cnt;
 	int m = c_cnt % this->thread_cnt;
 
+	Index2 pos, c_idx;
 	for (int i = 1; i < this->m_info.size_h - 1; i++) {
 		for (int j = 1; j < this->m_info.size_w - 1; j++) {
-			Index2 pos = this->m_info.s_pos + Index2(16 * j, -16 * i);
-			Index2 c_idx = this->m_info.findChunkIndex(pos.x, pos.y);
+			pos = this->m_info.s_pos + Index2(16 * j, -16 * i);
+			c_idx = this->m_info.findChunkIndex(pos.x, pos.y);
 			v_idxs.push_back(c_idx);
 		}
 	}
+
 	int st = 0;
 	int siz;
 	for (int i = 0; i < this->thread_cnt; i++) {
@@ -109,7 +111,6 @@ void Map::vertexAndIndexGenerator(
 
 void Map::vertexShadowGenerator(
 	Index2 const& c_idx,
-	Index2 const& adj_idx,
 	Index3 const& move,
 	int dir,
 	vector<VertexShadow>& vertices,
@@ -273,7 +274,6 @@ void Map::chunksSetVerticesAndIndices(
 			);
 			this->vertexShadowGenerator(
 				c_idx,
-				adj_idx,
 				move_arr[dir],
 				dir,
 				vertices_shadow,

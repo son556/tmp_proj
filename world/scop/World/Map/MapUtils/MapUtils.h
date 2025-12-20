@@ -2,6 +2,7 @@
 
 #include "WorldUtils.h"
 #include "Chunk.h"
+#include <atomic>
 
 /*
 * * -- *
@@ -258,6 +259,7 @@ public:
 			cidx = c_idx;
 		return cidx;
 	}
+
 private:
 	inline int findAdjBlock(Index2 const& c_idx, int x, int y, int z) const {
 		Index2 cpos = this->chunks[c_idx.y][c_idx.x]->chunk_pos;
@@ -364,17 +366,18 @@ public:
 	vec3 directional_light_pos; // 태양 위치
 	vec3 light_dir;
 
-	/*
-	Index2 -> chunk pos
-	Index3 -> block idx
-	Index2.x -> 지금 추가하려는 블록 상태
-	Index2.y -> 현 블록위치의 최초 블록 상태
-	*/
-	map<Index2, map<Index3, Index2>> book; // 유저의 행동 결과를 저장
+	/// <summary>
+	/// <para>Index2 -> chunk pos</para>
+	/// <para>Index3 -> block idx</para>
+	/// <para>Index2.x -> 지금 추가하려는 블록 상태</para>
+	/// <para>Index2.y -> 현 블록위치의 최초 블록 상태</para>
+	/// <para>유저의 행동 결과를 저장</para>
+	/// </summary>
+	map<Index2, map<Index3, Index2>> book; 
 
 private:
 	int* blocks;
 	int* h_map; // x z 위치에서 블록의 최고 높이(블록의 윗면 높이를 기준으로 함)
-	uint8* light_map;
+	atomic<uint8>* light_map; // TODO: atomic으로 변경
 };
 

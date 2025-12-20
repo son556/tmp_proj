@@ -708,6 +708,9 @@
     <ClInclude Include="World\Utils\WorldUtils.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="World\Map\ThreadPool.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -981,6 +984,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="World\Utils\WorldUtils.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="World\Map\ThreadPool.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

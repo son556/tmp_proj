@@ -35,9 +35,19 @@ public:
 		vector<uint32>* indices = nullptr,
 		uint32* index = nullptr
 	);
+
+	/// <summary>
+	/// 빛 block에 의한 밝기를 설정합니다.
+	/// </summary>
+	/// <param name="c_idx"></param>
+	/// <param name="move"></param>
+	/// <param name="dir"></param>
+	/// <param name="vertices"></param>
+	/// <param name="indices"></param>
+	/// <param name="index"></param>
 	void vertexShadowGenerator( // shadow 용
 		Index2 const& c_idx,
-		Index2 const& adj_idx,
+		//Index2 const& adj_idx,
 		Index3 const& move,
 		int dir,
 		vector<VertexShadow>& vertices,

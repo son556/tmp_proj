@@ -86,6 +86,7 @@ set<Index2> LightSystem::lightBFSAddChunks(queue<pair<Index2, Index3>>& que)
 	return book;
 }
 
+// TODO: 이 부분 수정 스레드 이용
 void LightSystem::createLightMap()
 {
 	queue<pair<Index2, Index3>> que;
@@ -187,14 +188,16 @@ void LightSystem::BFSLightBlockDelete(
 	// bfs
 	int b_type;
 	bool exit_flag = false;
-	while (que.size()) {
+	while (que.size()) 
+	{
 		s_cidx = que.front().first;
 		s_bidx = que.front().second;
 		light = this->m_info->findLight(s_cidx, s_bidx);
 		que.pop();
 		book.insert(s_cidx);
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 6; i++) 
+		{
 			n_cidx = s_cidx;
 			n_bidx = s_bidx + move_dir[i];
 			this->getIndex(n_cidx, n_bidx);

@@ -25,10 +25,10 @@ MapUtils::MapUtils(
 	this->ev_pos.y = -this->sv_pos.y;
 
 	this->blocks = new int[16 * 16 * size_h * size_w * 256];
-	this->light_map = new uint8[16 * 16 * size_h * size_w * 256];
+	this->light_map = new atomic<uint8>[16 * 16 * size_h * size_w * 256];
 	this->h_map = new int[16 * 16 * size_h * size_w];
 	fill(this->blocks, this->blocks + 16 * 16 * size_h * size_w * 256, 0);
-	fill(this->light_map, this->light_map + 16 * 16 * size_h * size_w * 256, 0);
+	memset(this->light_map, 0, 16 * 16 * size_h * size_w * 256);
 	fill(this->h_map, this->h_map + 16 * 16 * size_h * size_w, 0);
 }
 
@@ -285,11 +285,11 @@ void MapUtils::saveGame()
 	if (o.is_open()) {
 		o << j_arr.dump(4);
 		o.close();
-		cout << "게임이 저장되었습니다." << endl;
+		cout << "Game saved successfully." << endl;
 	}
 	else {
 		o.close();
-		cout << "게임 저장 실패!!!" << endl;
+		cout << "Error: Could not save game." << endl;
 	}
 }
 
@@ -297,7 +297,7 @@ void MapUtils::loadGame()
 {
 	ifstream i("book.json");
 	if (i.is_open() == false) {
-		cout << "파일을 불러오는데 실패했습니다." << endl;
+		cout << "Error: Game file not found." << endl;
 		return;
 	}
 
