@@ -68,14 +68,8 @@ struct Index2 {
 
 	Index2() : x(0), y(0), flag(false) {}
 	Index2(int x, int y) : x(x), y(y), flag(true) {}
-	Index2(Index2 const& idx2) { *this = idx2; }
-
-	Index2& operator=(Index2 const& idx2) {
-		this->x = idx2.x;
-		this->y = idx2.y;
-		this->flag = idx2.flag;
-		return *this;
-	}
+	Index2(Index2 const& idx2) = default;
+	Index2& operator=(Index2 const& idx2) = default;
 
 	Index2& operator+=(Index2 const& idx2) {
 		this->x += idx2.x;

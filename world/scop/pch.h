@@ -37,7 +37,8 @@ struct VertexUV {
 	vec2 uv;
 };
 
-struct MVP {
+struct MVP 
+{
 	Mat model = Mat::Identity;
 	Mat view = Mat::Identity;
 	Mat proj = Mat::Identity;
@@ -138,7 +139,6 @@ static const vector<vector<int>> blockOffset = {
 enum class CamType {
 	NORMAL,
 	REFLECTION_XZ,
-	TEMP
 };
 
 extern float sun_radian;

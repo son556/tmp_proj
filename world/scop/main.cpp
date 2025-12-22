@@ -74,11 +74,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     
     RECT client_rect;
     GetClientRect(hWnd, &client_rect);
-    cam->setWidth(client_rect.right - 1);
-    cam->setHeight(client_rect.bottom - 1);
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SCOP));
 
-    Terrain terrain(12, 12, hWnd, w_width, w_height, 1, 8); // 짝수 단위로만
+    Terrain terrain(12, 12, hWnd, w_width, w_height, 1, 10); // 짝수 단위로만
     CompositeRenderer composite_renderer;
     BlockTextureArray::Init();
     GUIManager gui_manager;
@@ -118,29 +116,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         else
         {
             gui_manager.selectInventoryItem(block_type - 1);
-            if (lb_flag) {
-                if (start_scene_flag) {
-                    if (start_scene.checkClickStartButton()) {
+            if (lb_flag) 
+            {
+                if (start_scene_flag) 
+                {
+                    if (start_scene.checkClickStartButton()) 
+                    {
                         start_scene_flag = false;
                         fix_flag = true;
                         start_scene.~StartScene();
                         //FmodSound::playSelectedSound();
                     }
-                    else if (start_scene.checkClickExitButton()) {
+                    else if (start_scene.checkClickExitButton()) 
+                    {
                         //FmodSound::release();
                         exit(0);
                     }
                 }
                 int b_type = gui_manager.getInventoryBlock(block_type - 1);
-                if (item_ui == false && b_type) {
+                if (item_ui == false && b_type) 
+                {
                     terrain.putBlock(cam->getPos(), cam->getDir(), b_type);
                     entity->setCharacterLeftArmAnimation();
                 }
                 click_check = true;
                 lb_flag = false;
             }
-            if (rb_flag) {
-                if (item_ui == false) {
+            if (rb_flag) 
+            {
+                if (item_ui == false) 
+                {
                     terrain.deleteBlock(cam->getPos(), cam->getDir());
                     entity->setCharacterLeftArmAnimation();
                 }
@@ -149,17 +154,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
             Time::update();
             delta_time = Time::DeltaTime();
-            if (start_scene_flag) {
+            if (start_scene_flag) 
+            {
                 SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
                 start_scene.render();
             }
-            else {
+            else 
+            {
                 entity->update(cam->getDir());
                 cam->update(entity->getCharacterPos(), entity->getCharacterDir());
                 terrain.userPositionCheck(cam->getPos().x, cam->getPos().z);
                 entity->checkEntityNowPos(); // 프레임 떨어졌을 경우 위치 조정용
+
+                //cam->TestUpdate(); // test 용 카메라
                 terrain.Render();
-                if (item_ui) {
+                if (item_ui) 
+                {
                     gui_manager.render(GUITexture::TAB_ITEMS, click_check);
                     click_check = false;
                 }

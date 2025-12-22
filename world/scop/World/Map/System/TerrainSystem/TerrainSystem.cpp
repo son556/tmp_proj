@@ -39,7 +39,7 @@ void TerrainSystem::createHeightMap()
 			Index2 c_pos = this->m_info->s_pos + Index2(j * 16, -i * 16);
 			Index2 c_idx;
 			c_idx = this->m_info->getChunkIndex(c_pos.x, c_pos.y);
-			this->m_info->chunks[c_idx.y][c_idx.x] = make_shared<Chunk>();
+			this->m_info->chunks[c_idx.y][c_idx.x] = make_unique<Chunk>();
 			this->m_info->chunks[c_idx.y][c_idx.x]->start_pos =
 				vec3(c_pos.x + 0.5f, 0.5f, c_pos.y - 0.5f);
 			this->m_info->chunks[c_idx.y][c_idx.x]->chunk_pos = c_pos;
@@ -74,7 +74,8 @@ void TerrainSystem::fillWithUserPlacedBlocks(Index2 const& c_idx)
 		return;
 
 	int16& max_h = this->m_info->chunks[c_idx.y][c_idx.x]->max_h;
-	for (auto it = book->begin(); it != book->end(); it++) {
+	for (auto it = book->begin(); it != book->end(); it++) 
+	{
 		this->m_info->addBlock(c_idx, it->first, it->second.x);
 		if (it->second.x)
 			max_h = max(max_h, it->first.y + 1);

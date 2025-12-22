@@ -5,8 +5,7 @@
 
 Chunk::Chunk()
 {
-	this->vertices_idx = 0;
-	this->render_flag = false;
+	reset();
 }
 
 Chunk::~Chunk()
@@ -105,6 +104,7 @@ void Chunk::reset()
 	this->vertices_idx = 0;
 	this->max_h = -1;
 	this->tp_chunk.reset();
+	this->w_chunk.reset();
 }
 
 void Chunk::setPos(Index2 const& c_pos)

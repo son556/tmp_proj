@@ -51,7 +51,7 @@ public:
 	ComPtr<ID3D11ShaderResourceView>& getSRV();
 
 private:
-	shared_ptr<Map> m_manager;
+	unique_ptr<Map> m_manager;
 	set<string> file_book;
 	map<vec3, uint32> object_book;
 	map<vec3, shared_ptr<Chunk>> tmp_storage;

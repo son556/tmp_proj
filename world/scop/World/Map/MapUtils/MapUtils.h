@@ -153,6 +153,21 @@ public:
 	map<Index3, Index2> const* const getUserPlacedBlocks(
 		Index2 const& chunk_pos);
 
+	inline const vector<pair<int, int>>& GetRenderableChunkIndices() const
+	{
+		return _renderableChunkIndices;
+	}
+
+	inline void ResetRenderableChunkIndices()
+	{
+		_renderableChunkIndices.clear();
+	}
+
+	inline void PutChunkIndexToRenderableChunkIndices(int x, int y)
+	{
+		_renderableChunkIndices.emplace_back(x, y);
+	}
+
 public:
 	/**
 	*  @brief 포함되는 world 좌표를 받아 block의 인덱스를 반환합니다.
@@ -240,8 +255,13 @@ public:
 		return ans;
 	}
 
-	inline Index2 getAdjacentChunkIndex(Index2 const& c_idx, 
-		Index3 const& next) {
+	/**
+	 * @brief next(블록의 다음 인덱스)가 청크 범위를 초과 한 경우 인접 청크의 청크 인덱스를 가져옵니다.
+	 * @param c_idx: 현재 청크 인덱스
+	 * @param next: 블록의 인덱스
+	 * @return 청크 인덱스
+	 */
+	inline Index2 getAdjacentChunkIndex(Index2 const& c_idx, Index3 const& next) {
 		Index2 cidx;
 		cidx.flag = true;
 		Index2 const& cpos = this->chunks[c_idx.y][c_idx.x]->chunk_pos;
@@ -359,7 +379,7 @@ public:
 	Index2 s_pos; // 맵의 시작 위치
 	Index2 sv_pos; // 실제로 보이는 부분의 시작위치
 	Index2 ev_pos; // 실제로 보이는 부분의 끝 위치
-	shared_ptr<Chunk> chunks[30][30];
+	unique_ptr<Chunk> chunks[30][30]; // [z][x]
 	HWND hWnd;
 	UINT width; // 창 가로 크기
 	UINT height; // 창 세로 크기
@@ -379,5 +399,6 @@ private:
 	int* blocks;
 	int* h_map; // x z 위치에서 블록의 최고 높이(블록의 윗면 높이를 기준으로 함)
 	atomic<uint8>* light_map; // TODO: atomic으로 변경
+	vector<pair<int, int>> _renderableChunkIndices;
 };
 

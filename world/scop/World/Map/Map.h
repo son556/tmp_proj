@@ -21,6 +21,9 @@ public:
 		UINT window_h
 	);
 	void userPositionCheck(float x, float z);
+
+	// spiral 방식으로 변경하기 위한 테스트 함수
+	void TestUserPositionCheck(float x, float z);
 	void chunksSetVerticesAndIndices( // 그림자와 면 생성
 		vector<Index2> const& v_idx,
 		int st,
@@ -36,15 +39,6 @@ public:
 		uint32* index = nullptr
 	);
 
-	/// <summary>
-	/// 빛 block에 의한 밝기를 설정합니다.
-	/// </summary>
-	/// <param name="c_idx"></param>
-	/// <param name="move"></param>
-	/// <param name="dir"></param>
-	/// <param name="vertices"></param>
-	/// <param name="indices"></param>
-	/// <param name="index"></param>
 	void vertexShadowGenerator( // shadow 용
 		Index2 const& c_idx,
 		//Index2 const& adj_idx,
@@ -70,15 +64,28 @@ private:
 	void resetChunk(Index2 const& c_idx);
 	int checkTerrainBoundary(float x, float z) const;
 	void threadFunc(vector<Index2>& vec, int dir);
+	bool IsChunkInViewDistance(float userPosX, float userPosZ, float chunkPosX, float chunkPosZ);
+
+	/**
+	 * @brief 버텍스 버퍼와 라이트 맵에서 수정이 일어나야 하는 청크의 인덱스를 모아줍니다.
+	 * @param chunkIndex 새로 만드는 청크의 인덱스
+	 * @param userPos 유저 위치(world)
+	 */
+	void CheckChunkVertices(const Index2& chunkIndex, vec2 userPos);
 
 public:
-	MapUtils m_info;
+	MapUtils _mapInfo;
 	LightSystem l_system;
 	TerrainSystem t_system;
 	RenderSystem r_system;
 
 private:
-	int c_fov;
+	static vector<vec2> direction;
+
+	int _chunkFOV; // chunk 시야 범위
 	int thread_cnt;
+	float _userSightRadius;
+	set<Index2> _resetChunkVerticesList;
+	vector<Index2> _renderChunkIndices;
 };
 

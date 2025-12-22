@@ -250,25 +250,29 @@ void Character::update(vec3 const& dir)
 	float theta = atan2(-new_dir.x, -new_dir.z);
 	this->rot = Mat::CreateRotationY(theta);
 
-	vec3 right_dir = vec3(0, 1, 0).Cross(this->dir);
+	vec3 right_dir = XMVector3Normalize(vec3(0, 1, 0).Cross(this->dir));
 	vec3 up_dir = this->dir.Cross(right_dir);
 	vec3 move_dir = vec3(0, 0, 0);
 	bool press_move_key = false;
 
-	if (GetAsyncKeyState('A') & 0x8000) {
-		move_dir -= XMVector3Normalize(vec3(right_dir.x, 0, right_dir.z));
+	if (GetAsyncKeyState('A') & 0x8000) 
+	{
+		move_dir -= right_dir;
 		press_move_key = true;
 	}
-	if (GetAsyncKeyState('D') & 0x8000) {
-		move_dir += XMVector3Normalize(vec3(right_dir.x, 0, right_dir.z));
+	if (GetAsyncKeyState('D') & 0x8000) 
+	{
+		move_dir += right_dir;
 		press_move_key = true;
 	}
-	if (GetAsyncKeyState('W') & 0x8000) {
-		move_dir += XMVector3Normalize(vec3(this->dir.x, 0, this->dir.z));
+	if (GetAsyncKeyState('W') & 0x8000) 
+	{
+		move_dir += this->dir;
 		press_move_key = true;
 	}
-	if (GetAsyncKeyState('S') & 0x8000) {
-		move_dir -= XMVector3Normalize(vec3(this->dir.x, 0, this->dir.z));
+	if (GetAsyncKeyState('S') & 0x8000) 
+	{
+		move_dir -= this->dir;
 		press_move_key = true;
 	}
 	if (GetAsyncKeyState('E') & 0x8000)
