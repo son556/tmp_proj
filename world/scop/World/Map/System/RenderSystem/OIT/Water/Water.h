@@ -4,7 +4,7 @@
 #include "WaterReflection.h"
 #include "WaterRefraction.h"
 
-class TestRender;
+//class TestRender;
 
 template<typename T> class Buffer;
 struct VertexDefer;
@@ -50,6 +50,6 @@ private:
 	shared_ptr<ConstantBuffer> constant_buffer;
 
 private:
-	shared_ptr<TestRender> rt;
+	//shared_ptr<TestRender> rt;
 };
 

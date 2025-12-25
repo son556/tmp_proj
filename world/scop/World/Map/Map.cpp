@@ -29,7 +29,6 @@ Map::Map(
 	this->l_system.createLightMap();
 	this->t_system.createTrees();
 	this->terrainSetVerticesAndIndices();
-
 }
 
 
@@ -45,9 +44,10 @@ void Map::resetChunk(Index2 const& c_idx)
 	}
 }
 
+// TODO 수정 필요
 void Map::terrainSetVerticesAndIndices()
 {
-	vector<Index2> v_idxs;
+	/*vector<Index2> v_idxs;
 	int c_cnt = (_mapInfo.size_h - 2) * (_mapInfo.size_w - 2);
 	int t = c_cnt / this->thread_cnt;
 	int m = c_cnt % this->thread_cnt;
@@ -72,7 +72,10 @@ void Map::terrainSetVerticesAndIndices()
 			siz = t;
 		this->chunksSetVerticesAndIndices(v_idxs, st, st + siz);
 		st = st + siz;
-	}
+	}*/
+
+	const vector<Index2>& renderableChunks = _mapInfo.GetRenderableChunkListToRead();
+	this->chunksSetVerticesAndIndices(renderableChunks, 0, renderableChunks.size());
 }
 
 void Map::vertexAndIndexGenerator(
@@ -133,7 +136,8 @@ void Map::vertexShadowGenerator(
 				if (type <= 0)
 					continue;
 				Index3 next(x + move.x, y + move.y, z - move.z);
-				if (_mapInfo.findBlock(c_idx, next) > 0) {
+				if (_mapInfo.findBlock(c_idx, next) > 0) 
+				{
 					bool c_flag = true;
 					if (cpos.x == sv_pos.x && next.x < 0)
 						c_flag = false;
@@ -509,28 +513,102 @@ void Map::CheckChunkVertices(const Index2& chunkIndex, vec2 userPos)
 	Index2 adjChunkIndex;
 	Index2 adjChunkPos;
 
-	_resetChunkVerticesList.insert(chunkIndex);
+	_createNewBufferChunkIndices.insert(chunkIndex);
+	_createNewChunkIndices.insert(chunkIndex);
 	for (auto& dir : direction)
 	{
 		adjChunkPos = chunkPos + Index2(dir.x, dir.y);
 		adjChunkIndex = _mapInfo.findChunkIndex(adjChunkPos.x, adjChunkPos.y);
-		if (adjChunkIndex.flag && IsChunkInViewDistance(userPos.x, userPos.y, adjChunkPos.x, adjChunkPos.y))
+		if (adjChunkIndex.flag == true && IsChunkInViewDistance(userPos.x, userPos.y, adjChunkPos.x, adjChunkPos.y) == true)
 		{
-			_resetChunkVerticesList.insert(adjChunkIndex);
+			_createNewBufferChunkIndices.insert(adjChunkIndex);
 		}
+	}
+}
+
+void Map::UpdateChunks()
+{
+	// test 용 로직
+	for (const Index2& chunkIndex : _createNewChunkIndices)
+	{
+		this->resetChunk(chunkIndex);
+		this->t_system.fillChunk(chunkIndex, _mapInfo.chunks[chunkIndex.y][chunkIndex.x]->chunk_pos);
+		this->t_system.fillWithUserPlacedBlocks(chunkIndex);
+	}
+
+
+	static const Index3 move_arr[6] = {
+		Index3(0, 1, 0),
+		Index3(0, -1, 0),
+		Index3(0, 0, -1),
+		Index3(0, 0, 1),
+		Index3(-1, 0, 0),
+		Index3(1, 0, 0)
+	};
+	vector<VertexGeo> vertices_geo;
+	vector<VertexShadow> vertices_shadow;
+	vector<uint32> indices;
+	vector<uint32> s_indices;
+	uint32 s_idx;
+	uint32 idx;
+	for (const Index2& chunkIndex : _createNewBufferChunkIndices)
+	{
+		Index2 const& c_idx = chunkIndex;
+		_mapInfo.chunks[c_idx.y][c_idx.x]->vertices_idx = 0;
+		Index2 apos = _mapInfo.chunks[c_idx.y][c_idx.x]->chunk_pos;
+		s_idx = 0;
+		idx = 0;
+		for (int dir = 0; dir < 6; dir++) {
+			Index2 pos = apos + Index2(16 * move_arr[dir].x,
+				16 * move_arr[dir].z);
+			Index2 adj_idx = _mapInfo.findChunkIndex(pos.x, pos.y);
+			this->vertexAndIndexGenerator(
+				c_idx,
+				adj_idx,
+				move_arr[dir],
+				dir,
+				vertices_geo,
+				&indices,
+				&idx
+			);
+			this->vertexShadowGenerator(
+				c_idx,
+				move_arr[dir],
+				dir,
+				vertices_shadow,
+				&s_indices,
+				&s_idx
+			);
+		}
+		this->vertexAndIndexGeneratorTP(c_idx);
+		this->vertexAndIndexGeneratorWater(c_idx);
+		_mapInfo.chunks[c_idx.y][c_idx.x]->createGeoBuffer(
+			d_graphic->getDevice(),
+			vertices_geo,
+			indices
+		);
+		_mapInfo.chunks[c_idx.y][c_idx.x]->createShadowBuffer(
+			d_graphic->getDevice(),
+			vertices_shadow,
+			s_indices
+		);
+		vertices_shadow.clear();
+		vertices_geo.clear();
+		s_indices.clear();
+		indices.clear();
 	}
 }
 
 void Map::TestUserPositionCheck(float x, float z)
 {
-	_mapInfo.ResetRenderableChunkIndices();
-	_resetChunkVerticesList.clear();
-	_renderChunkIndices.clear();
+	_createNewChunkIndices.clear();
+	_createNewBufferChunkIndices.clear();
+	_mapInfo.ResetRenderableChunkList();
 	
 	// start chunk index loop
 	vec2 userSightAABBMin = vec2(x - _chunkFOV * 8, z + _chunkFOV * 8);
 
-	Index2 startChunkIndex = _mapInfo.getChunkIndex(userSightAABBMin.x, userSightAABBMin.y);
+	Index2 startChunkIndex = _mapInfo.findChunkIndex(userSightAABBMin.x, userSightAABBMin.y);
 	Index2 chunkIndex;
 	Index2 chunkPos;
 	Index2 startChunkPos = _mapInfo.chunks[startChunkIndex.y][startChunkIndex.x]->chunk_pos;
@@ -541,7 +619,7 @@ void Map::TestUserPositionCheck(float x, float z)
 	{
 		for (int j = 0; j <= _chunkFOV; j++)
 		{
-			chunkPos = startChunkPos + Index2(16 * i, -16 * j);
+			chunkPos = startChunkPos + Index2(16 * j, -16 * i);
 			chunkIndex = _mapInfo.findChunkIndex(chunkPos.x, chunkPos.y);
 			Chunk* chunk = _mapInfo.chunks[chunkIndex.y][chunkIndex.x].get();
 			
@@ -565,7 +643,8 @@ void Map::TestUserPositionCheck(float x, float z)
 				CheckChunkVertices(chunkIndex, { x, z });
 			}
 			chunk->render_flag = true;
-			_renderChunkIndices.emplace_back(chunkIndex);
+			_mapInfo.AddChunkToRenderableChunkList(chunkIndex);
 		}
 	}
+	UpdateChunks();
 }

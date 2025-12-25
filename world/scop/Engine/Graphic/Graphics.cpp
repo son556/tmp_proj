@@ -87,15 +87,15 @@ void Graphics::createDeviceAndSwapChain()
 
 	UINT createDeviceFlags = 0;
 
-#ifdef _DEBUG
-	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
+//#ifdef _DEBUG
+//	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+//#endif
 
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		createDeviceFlags,
+		0, // createDeviceFlags,
 		nullptr,
 		0,
 		D3D11_SDK_VERSION,

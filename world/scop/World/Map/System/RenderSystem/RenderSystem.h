@@ -1,8 +1,7 @@
 #pragma once
 
-#include "DeferredRendering.h"
-
-class Graphics;
+class DeferredRendering;
+class MapUtils;
 
 class RenderSystem
 {

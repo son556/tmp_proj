@@ -51,7 +51,6 @@ public:
 		return res;
 	}
 
-public:
 	inline int findBlock(Index2 const& c_idx, int x, int y, int z) const {
 		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) +
 			x + 16 * (z + 16 * y);
@@ -153,21 +152,6 @@ public:
 	map<Index3, Index2> const* const getUserPlacedBlocks(
 		Index2 const& chunk_pos);
 
-	inline const vector<pair<int, int>>& GetRenderableChunkIndices() const
-	{
-		return _renderableChunkIndices;
-	}
-
-	inline void ResetRenderableChunkIndices()
-	{
-		_renderableChunkIndices.clear();
-	}
-
-	inline void PutChunkIndexToRenderableChunkIndices(int x, int y)
-	{
-		_renderableChunkIndices.emplace_back(x, y);
-	}
-
 public:
 	/**
 	*  @brief 포함되는 world 좌표를 받아 block의 인덱스를 반환합니다.
@@ -228,29 +212,42 @@ public:
 	 */
 	WorldIndex pickBlock(vec3 r_pos, vec3 r_dir);
 
-
-	inline Index2 findChunkIndex(int w_x, int w_z) const {
-		int t = w_x / 16;
-		int x = (t % this->size_w + this->size_w) % this->size_w;
-		t = w_z / 16;
-		int z = (t % this->size_h + this->size_h) % this->size_h;
+	/**
+	 * @brief 월드 좌표를 포함하고 있는 청크의 인덱스를 찾아줍니다. (flag 가 false이면 찾지 못함)
+	 * @param w_x 월드의 x 좌표
+	 * @param w_z 월드의 z 좌표
+	 * @return 청크의 인덱스
+	 */
+	inline Index2 findChunkIndex(int w_x, int w_z) const 
+	{
+		Index2 expectedVal = Index2(w_x & ~15, (w_z + 15) & ~15);
+		w_x = w_x >> 4;
+		int x = (w_x % this->size_w + this->size_w) % this->size_w;
+		w_z = (w_z + 15) >> 4;
+		int z = (w_z % this->size_h + this->size_h) % this->size_h;
 		Index2 ans = Index2(x, z);
 		if (this->chunks[ans.y][ans.x] == nullptr) {
 			ans.flag = false;
 			return ans;
 		}
 		Index2 pos = this->chunks[ans.y][ans.x]->chunk_pos;
-		if (pos.x != w_x || pos.y != w_z)
+		if (pos.x != expectedVal.x || pos.y != expectedVal.y)
 			ans.flag = false;
 		return ans;
 	}
 
-
-	inline Index2 getChunkIndex(int w_x, int w_z) const {
-		int t = w_x / 16;
-		int x = (t % this->size_w + this->size_w) % this->size_w;
-		t = w_z / 16;
-		int z = (t % this->size_h + this->size_h) % this->size_h;
+	/**
+	 * @brief 월드좌표를 포함하는 청크의 인덱스를 만들어 줍니다.
+	 * @param w_x 월드의 x 좌표
+	 * @param w_z 월드의 z 좌표
+	 * @return 청크의 인덱스
+	 */
+	inline Index2 getChunkIndex(int w_x, int w_z) const 
+	{
+		w_x = w_x >> 4;
+		int x = (w_x % this->size_w + this->size_w) % this->size_w;
+		w_z = (w_z + 15) >> 4;
+		int z = (w_z % this->size_h + this->size_h) % this->size_h;
 		Index2 ans = Index2(x, z);
 		return ans;
 	}
@@ -266,13 +263,13 @@ public:
 		cidx.flag = true;
 		Index2 const& cpos = this->chunks[c_idx.y][c_idx.x]->chunk_pos;
 		if (next.x < 0)
-			cidx = this->findChunkIndex(cpos.x - 16, cpos.y);
+			cidx = this->findChunkIndex(cpos.x - 1, cpos.y);
 		else if (next.x > 15)
-			cidx = this->findChunkIndex(cpos.x + 16, cpos.y);
+			cidx = this->findChunkIndex(cpos.x + 17, cpos.y);
 		else if (next.z < 0)
-			cidx = this->findChunkIndex(cpos.x, cpos.y + 16);
+			cidx = this->findChunkIndex(cpos.x, cpos.y + 1);
 		else if (next.z > 15)
-			cidx = this->findChunkIndex(cpos.x, cpos.y - 16);
+			cidx = this->findChunkIndex(cpos.x, cpos.y - 17);
 		else if (next.y < 0)
 			cidx = c_idx;
 		else if (next.y > 255)
@@ -280,37 +277,48 @@ public:
 		return cidx;
 	}
 
+	inline void ResetRenderableChunkList()
+	{
+		_renderableChunkList.clear();
+	}
+
+	inline void AddChunkToRenderableChunkList(const Index2 chunkIndex)
+	{
+		_renderableChunkList.push_back(chunkIndex);
+	}
+
+	inline const vector<Index2>& GetRenderableChunkListToRead() const
+	{
+		return _renderableChunkList;
+	}
+
 private:
 	inline int findAdjBlock(Index2 const& c_idx, int x, int y, int z) const {
 		Index2 cpos = this->chunks[c_idx.y][c_idx.x]->chunk_pos;
 		int idx = 0;
 		if (x < 0) {
-			cpos.x -= 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x - 1, cpos.y);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y) +
 				15 + 16 * (z + 16 * y);
 		}
 		else if (x > 15) {
-			cpos.x += 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x + 17, cpos.y);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
 				+ 16 * (z + 16 * y);
 		}
 		else if (z < 0) {
-			cpos.y += 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y + 1);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
 				+ x + 16 * (15 + 16 * y);
 		}
 		else if (z > 15) {
-			cpos.y -= 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y - 17);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
@@ -327,32 +335,28 @@ private:
 		Index2 cpos = this->chunks[c_idx.y][c_idx.x]->chunk_pos;
 		int idx;
 		if (x < 0) {
-			cpos.x -= 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x - 1, cpos.y);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y) +
 				15 + 16 * (z + 16 * y);
 		}
 		else if (x > 15) {
-			cpos.x += 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x + 17, cpos.y);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
 				+ 16 * (z + 16 * y);
 		}
 		else if (z < 0) {
-			cpos.y += 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y + 1);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
 				+ x + 16 * (15 + 16 * y);
 		}
 		else if (z > 15) {
-			cpos.y -= 16;
-			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y);
+			Index2 adj_idx = this->findChunkIndex(cpos.x, cpos.y - 17);
 			if (adj_idx.flag == false)
 				return 0;
 			idx = 16 * 16 * 256 * (adj_idx.x + this->size_w * adj_idx.y)
@@ -399,6 +403,6 @@ private:
 	int* blocks;
 	int* h_map; // x z 위치에서 블록의 최고 높이(블록의 윗면 높이를 기준으로 함)
 	atomic<uint8>* light_map; // TODO: atomic으로 변경
-	vector<pair<int, int>> _renderableChunkIndices;
+	vector<Index2> _renderableChunkList;
 };
 

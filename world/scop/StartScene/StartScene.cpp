@@ -110,6 +110,21 @@ StartScene::StartScene()
 
 void StartScene::render()
 {
+	static bool testRenderFlag = true;
+	
+	/*if (testRenderFlag)
+	{
+		if (testRenderFlag)
+		{
+			auto ctx = d_graphic->getContext();
+			ctx->IASetPrimitiveTopology(
+				D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+			);
+			ctx->Draw(3, 0);
+			testRenderFlag = false;
+		}
+		testRenderFlag = false;
+	}*/
 	this->setPipe();
 	ComPtr<ID3D11DeviceContext> const& context = d_graphic->getContext();
 	vec4 c_dir = vec4(0, 0, 1, 0);
@@ -192,6 +207,19 @@ bool StartScene::checkClickExitButton()
 	if (c_pos.first > sx && c_pos.first < ex && c_pos.second < sy && c_pos.second > ey)
 		return true;
 	return false;
+}
+
+void StartScene::testDummyRender()
+{
+	// Render loop 안
+	d_graphic->renderBegin();
+
+	// RenderDoc 인식용 더미 드로우
+	ComPtr<ID3D11DeviceContext> const& context = d_graphic->getContext();
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->Draw(3, 0);
+
+	d_graphic->renderEnd();
 }
 
 void StartScene::setPipe()

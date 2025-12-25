@@ -28,7 +28,6 @@ void Chunk::setGeoRender(
 	);
 	context->IASetIndexBuffer(this->geo_ibuffer->getComPtr().Get(), DXGI_FORMAT_R32_UINT, 0);
 	context->DrawIndexed(this->geo_ibuffer->getCount(), 0, 0);
-	//context->Draw(this->geo_vbuffer->getCount(), 0);
 }
 
 void Chunk::setShadowRender(
@@ -74,7 +73,7 @@ void Chunk::createGeoBuffer(
 		indices.size(),
 		D3D11_BIND_INDEX_BUFFER
 	);
-	this->render_flag = true;
+	//this->render_flag = true;
 }
 
 void Chunk::createShadowBuffer(
@@ -95,7 +94,7 @@ void Chunk::createShadowBuffer(
 		indices.size(),
 		D3D11_BIND_INDEX_BUFFER
 	);
-	this->render_flag = true;
+	//this->render_flag = true;
 }
 
 void Chunk::reset()

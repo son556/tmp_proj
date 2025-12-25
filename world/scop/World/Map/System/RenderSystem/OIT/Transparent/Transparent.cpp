@@ -152,7 +152,9 @@ void Transparent::render(
 	);
 
 	context->PSSetShaderResources(0, 1, depth_srv.GetAddressOf());
-	for (int i = 0; i < this->m_info->size_h; i++) {
+	
+	// TODO: 나중에 지울 부분
+	/*for (int i = 0; i < this->m_info->size_h; i++) {
 		for (int j = 0; j < this->m_info->size_w; j++) {
 			if (water_up_flag) {
 				if (this->m_info->chunks[i][j]->tp_chunk.render_up_flag == false)
@@ -164,6 +166,20 @@ void Transparent::render(
 					continue;
 				this->m_info->chunks[i][j]->tp_chunk.render(context, false);
 			}
+		}
+	}*/
+	for (auto chunkIndex : this->m_info->GetRenderableChunkListToRead())
+	{
+		if (water_up_flag) 
+		{
+			if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->tp_chunk.render_up_flag == false)
+				continue;
+			this->m_info->chunks[chunkIndex.y][chunkIndex.x]->tp_chunk.render(context, true);
+		}
+		else {
+			if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->tp_chunk.render_down_flag == false)
+				continue;
+			this->m_info->chunks[chunkIndex.y][chunkIndex.x]->tp_chunk.render(context, false);
 		}
 	}
 	entity->characterRenderTP(type, depth_srv, this->sampler_state, water_up_flag);

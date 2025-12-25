@@ -146,10 +146,16 @@ void Terrain::putBlock(
 	}
 }
 
+//#include "Utils/TestUtils/TestPrint.h"
+
 void Terrain::deleteBlock(vec3 const& ray_pos, vec3 const& ray_dir)
 {
 	WorldIndex widx = this->m_manager->_mapInfo.pickBlock(ray_pos, ray_dir);
 	if (widx.flag) {
+		/*TestPrint::PrintWidx(widx);
+		Index2 cpos = this->m_manager->_mapInfo.chunks[widx.c_idx.y][widx.c_idx.x]->chunk_pos;
+		cout << "chunk pos: ";
+		TestPrint::PrintIndex2(cpos);*/
 		int type = this->m_manager->_mapInfo.findBlock(widx.c_idx, widx.b_idx);
 		this->m_manager->_mapInfo.writeBookAboutBlockStatus(
 			this->m_manager->_mapInfo.chunks[widx.c_idx.y][widx.c_idx.x]->chunk_pos,
@@ -237,6 +243,7 @@ void Terrain::setSightChunk(int cnt)
 void Terrain::userPositionCheck(float x, float z)
 {
 	this->m_manager->userPositionCheck(x, z);
+	//this->m_manager->TestUserPositionCheck(x, z);
 }
 
 int16 Terrain::getHeight(float x, float z) const

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "RenderSystem.h"
+#include "DeferredRendering.h"
 
 RenderSystem::RenderSystem(MapUtils* minfo) 
 	: m_info(minfo)

@@ -101,12 +101,21 @@ void WaterInit::render(
 	context->VSSetConstantBuffers(0, 1,
 		cam->getConstantBuffer(type)->getComPtr().GetAddressOf());
 	context->PSSetShaderResources(0, 1, depth_srv.GetAddressOf());
-	for (int i = 0; i < this->m_info->size_h; i++) {
+	
+	//TODO : 나중에 지울 부분
+	/*for (int i = 0; i < this->m_info->size_h; i++) {
 		for (int j = 0; j < this->m_info->size_w; j++) {
 			if (this->m_info->chunks[i][j]->w_chunk.render_flag == false)
 				continue;
 			this->m_info->chunks[i][j]->w_chunk.setBuffer(context);
 		}
+	}*/
+
+	for (auto chunkIndex : this->m_info->GetRenderableChunkListToRead())
+	{
+		if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->w_chunk.render_flag == false)
+			continue;
+		this->m_info->chunks[chunkIndex.y][chunkIndex.x]->w_chunk.setBuffer(context);
 	}
 	context->OMSetDepthStencilState(nullptr, 0);
 }

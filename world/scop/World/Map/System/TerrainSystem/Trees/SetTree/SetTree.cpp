@@ -99,13 +99,17 @@ void SetTree::putTree(Index2 const& c_idx, int x, int y, int z)
 
 void SetTree::createTrees()
 {
-	for (int i = 1; i < this->m_info->size_h - 1; i++) {
+	/*for (int i = 1; i < this->m_info->size_h - 1; i++) {
 		for (int j = 1; j < this->m_info->size_w - 1; j++) {
 			Index2 c_pos = this->m_info->s_pos + Index2(j * 16, -i * 16);
 			Index2 c_idx;
 			c_idx = this->m_info->getChunkIndex(c_pos.x, c_pos.y);
 			this->makeTree(c_idx);
 		}
+	}*/
+	for (const auto chunkIndex : m_info->GetRenderableChunkListToRead())
+	{
+		this->makeTree(chunkIndex);
 	}
 }
 

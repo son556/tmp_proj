@@ -163,7 +163,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             {
                 entity->update(cam->getDir());
                 cam->update(entity->getCharacterPos(), entity->getCharacterDir());
-                terrain.userPositionCheck(cam->getPos().x, cam->getPos().z);
+                //terrain.userPositionCheck(cam->getPos().x, cam->getPos().z);
                 entity->checkEntityNowPos(); // 프레임 떨어졌을 경우 위치 조정용
 
                 //cam->TestUpdate(); // test 용 카메라

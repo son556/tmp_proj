@@ -16,9 +16,9 @@
 #include "ConstantBuffer.h"
 #include "OIT.h"
 
-#include "TestRender.h"
-
-shared_ptr<TestRender> test;
+//#include "TestRender.h"
+//
+//shared_ptr<TestRender> test;
 
 WaterReflection::WaterReflection(MapUtils* m_info)
 {
@@ -62,7 +62,7 @@ WaterReflection::WaterReflection(MapUtils* m_info)
 	this->init(device, m_info);
 
 	// test
-	test = make_shared<TestRender>(m_info);
+	//test = make_shared<TestRender>(m_info);
 }
 
 void WaterReflection::render()

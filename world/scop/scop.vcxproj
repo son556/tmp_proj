@@ -182,7 +182,8 @@
     <ClInclude Include="StartScene\Letter\Letter.h" />
     <ClInclude Include="StartScene\StartScene.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TestRender.h" />
+    <ClInclude Include="Utils\TestUtils\TestPrint.h" />
+    <ClInclude Include="Utils\TestUtils\TestRender.h" />
     <ClInclude Include="World\Map\ThreadPool.h" />
     <ClInclude Include="Utils\JSON\json.hpp" />
     <ClInclude Include="Utils\SimpleMath\SimpleMath.h" />
@@ -282,7 +283,8 @@
     </ClCompile>
     <ClCompile Include="StartScene\Letter\Letter.cpp" />
     <ClCompile Include="StartScene\StartScene.cpp" />
-    <ClCompile Include="TestRender.cpp" />
+    <ClCompile Include="Utils\TestUtils\TestPrint.cpp" />
+    <ClCompile Include="Utils\TestUtils\TestRender.cpp" />
     <ClCompile Include="World\Map\ThreadPool.cpp" />
     <ClCompile Include="Utils\SimpleMath\SimpleMath.cpp" />
     <ClCompile Include="Utils\WICTextureLoader\WICTextureLoader11.cpp" />

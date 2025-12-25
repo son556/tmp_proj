@@ -34,33 +34,32 @@ void DeferredGraphics::renderBegin(
 	if (d_buffer)
 		cnt = d_buffer->getCnt();
 	vector<ID3D11RenderTargetView*> views(cnt);
-	if (d_buffer) {
+	if (d_buffer) 
+	{
 		for (int i = 0; i < cnt; i++)
 			views[i] = d_buffer->getRTV(i).Get();
-		if (reset_rtv) {
-			for (int i = 0; i < cnt; i++) {
-				this->context->ClearRenderTargetView(
-					views[i],
-					this->clear_color
-				);
-			}
-		}
 	}
-	else {
+	else
 		views[0] = this->defer_rtv.Get();
-		if (reset_rtv) {
-			this->context->ClearRenderTargetView(
-				views[0],
-				this->clear_color
-			);
-		}
-	}
 	ComPtr<ID3D11DepthStencilView> depth_stencil_view;
 	if (dsv)
 		depth_stencil_view = dsv;
 	else
 		depth_stencil_view = this->DSV;
 	
+	this->context->OMSetRenderTargets(
+		cnt,
+		views.data(),
+		depth_stencil_view.Get()
+	);
+	if (reset_rtv) {
+		for (int i = 0; i < cnt; i++) {
+			this->context->ClearRenderTargetView(
+				views[i],
+				this->clear_color
+			);
+		}
+	}
 	if (reset_dsv) {
 		this->context->ClearDepthStencilView(
 			depth_stencil_view.Get(),
@@ -69,11 +68,6 @@ void DeferredGraphics::renderBegin(
 			0
 		);
 	}
-	this->context->OMSetRenderTargets(
-		cnt,
-		views.data(),
-		depth_stencil_view.Get()
-	);
 	this->context->RSSetViewports(1, &(this->view_port));
 }
 
@@ -85,6 +79,13 @@ void DeferredGraphics::renderBegin(
 	bool reset_depth_stencil_view
 )
 {
+	
+	ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+	if (dsv)
+		depth_stencil_view = dsv;
+	else
+		depth_stencil_view = this->DSV;
+	this->context->OMSetRenderTargets(cnt, rtvs, depth_stencil_view.Get());
 	if (reset_render_target) {
 		for (int i = 0; i < cnt; i++) {
 			this->context->ClearRenderTargetView(
@@ -93,24 +94,19 @@ void DeferredGraphics::renderBegin(
 			);
 		}
 	}
-	ComPtr<ID3D11DepthStencilView> depth_stencil_view;
-	if (dsv)
-		depth_stencil_view = dsv;
-	else
-		depth_stencil_view = this->DSV;
 	if (reset_depth_stencil_view) {
 		this->context->ClearDepthStencilView(
 			depth_stencil_view.Get(),
 			D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 			1.f, 0);
 	}
-	this->context->OMSetRenderTargets(cnt, rtvs, depth_stencil_view.Get());
 	this->context->RSSetViewports(1, &(this->view_port));
 }
 
 void DeferredGraphics::renderEnd()
 {
-	this->swap_chain->Present(1, 0);
+	//this->swap_chain->Present(0, 0);
+	this->swap_chain->Present(0, DXGI_PRESENT_ALLOW_TEARING); // 성능 test용
 }
 
 void DeferredGraphics::createSwapChainAndDevice()
@@ -129,12 +125,17 @@ void DeferredGraphics::createSwapChainAndDevice()
 	desc.SampleDesc.Quality = 0;
 	desc.BufferUsage = DXGI_USAGE_SHADER_INPUT |
 		DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.BufferCount = 1;
+	desc.BufferCount = 2;
 	desc.OutputWindow = this->hWnd;
 	desc.Windowed = TRUE;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-	HREFTYPE hr = D3D11CreateDeviceAndSwapChain(
+
+	// 성능 test용
+	desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+	desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+	HRESULT hr = D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,

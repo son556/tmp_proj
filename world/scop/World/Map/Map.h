@@ -72,6 +72,11 @@ private:
 	 * @param userPos 유저 위치(world)
 	 */
 	void CheckChunkVertices(const Index2& chunkIndex, vec2 userPos);
+	
+	/**
+	 * @brief 새로 만들어야(light, vertex, index...) 하는 청크들을 업데이트 하는 함수입니다.
+	 */
+	void UpdateChunks();
 
 public:
 	MapUtils _mapInfo;
@@ -85,7 +90,7 @@ private:
 	int _chunkFOV; // chunk 시야 범위
 	int thread_cnt;
 	float _userSightRadius;
-	set<Index2> _resetChunkVerticesList;
-	vector<Index2> _renderChunkIndices;
+	set<Index2> _createNewBufferChunkIndices;
+	set<Index2> _createNewChunkIndices;
 };
 

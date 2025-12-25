@@ -1,9 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS // stb_image_write compile error fix
 
 /*
-1.솔루션 탐색기에서 프로젝트 이름을 마우스 오른쪽 버튼으로 클릭하고 
+1.솔루션 탐색기에서 프로젝트 이름을 마우스 오른쪽 버튼으로 클릭하고
 **속성(Properties)**을 선택합니다.
-2. C/C++ -> Preprocessor -> Preprocessor Definitions 항목에 
+2. C/C++ -> Preprocessor -> Preprocessor Definitions 항목에
 _CRT_SECURE_NO_WARNINGS를 추가합니다.
 */
 
@@ -143,73 +143,74 @@ void ReadImage(const std::string filename, std::vector<uint8_t>& image,
 
 // mipmap 적용
 TextureArray::TextureArray(
-	ComPtr<ID3D11Device> device, 
-	ComPtr<ID3D11DeviceContext> context, 
-	vector<wstring> const& filenames, 
+	ComPtr<ID3D11Device> device,
+	ComPtr<ID3D11DeviceContext> context,
+	vector<wstring> const& filenames,
 	int mip_level,
 	bool srgb_flag
 )
 {
-	 int width = 0, height = 0;
-        vector<vector<uint8_t>> imageArray;
-        for (const auto& f : filenames) {
+	int width = 0, height = 0;
+	vector<vector<uint8_t>> imageArray;
+	for (const auto& f : filenames) {
 
-            std::vector<uint8_t> image;
-			string file;
-			file.assign(f.begin(), f.end());
-            ReadImage(file, image, width, height);
+		std::vector<uint8_t> image;
+		string file;
+		file.assign(f.begin(), f.end());
+		ReadImage(file, image, width, height);
 
-            imageArray.push_back(image);
-        }
+		imageArray.push_back(image);
+	}
 
-        UINT size = UINT(filenames.size());
+	UINT size = UINT(filenames.size());
 
-        // Texture2DArray를 만듭니다. 이때 데이터를 CPU로부터 복사하지 않습니다.
-        D3D11_TEXTURE2D_DESC txtDesc;
-        ZeroMemory(&txtDesc, sizeof(txtDesc));
-        txtDesc.Width = UINT(width);
-        txtDesc.Height = UINT(height);
-        txtDesc.MipLevels = mip_level; // 밉맵 내가 만들수 있는 만큼 = 0
-        txtDesc.ArraySize = size;
-		if (srgb_flag == false)
-			txtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		else
-			txtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-        txtDesc.SampleDesc.Count = 1;
-        txtDesc.SampleDesc.Quality = 0;
-        txtDesc.Usage = D3D11_USAGE_DEFAULT; // 스테이징 텍스춰로부터 복사 가능
-        txtDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | 
-			D3D11_BIND_RENDER_TARGET;// 읽기도 가능하고 결과도 출력 가능
-        txtDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS; // 밉맵 사용
+	// Texture2DArray를 만듭니다. 이때 데이터를 CPU로부터 복사하지 않습니다.
+	D3D11_TEXTURE2D_DESC txtDesc;
+	ZeroMemory(&txtDesc, sizeof(txtDesc));
+	txtDesc.Width = UINT(width);
+	txtDesc.Height = UINT(height);
+	txtDesc.MipLevels = mip_level; // 밉맵 내가 만들수 있는 만큼 = 0
+	txtDesc.ArraySize = size;
+	if (srgb_flag == false)
+		txtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	else
+		txtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	txtDesc.SampleDesc.Count = 1;
+	txtDesc.SampleDesc.Quality = 0;
+	txtDesc.Usage = D3D11_USAGE_DEFAULT; // 스테이징 텍스춰로부터 복사 가능
+	txtDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE |
+		D3D11_BIND_RENDER_TARGET;// 읽기도 가능하고 결과도 출력 가능
+	txtDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS; // 밉맵 사용
 
-        // 초기 데이터 없이 텍스춰를 만듭니다.
-        device->CreateTexture2D(&txtDesc, nullptr, 
-			this->texture_arr.GetAddressOf());
+	// 초기 데이터 없이 텍스춰를 만듭니다.
+	device->CreateTexture2D(&txtDesc, nullptr,
+		this->texture_arr.GetAddressOf());
 
-        // 실제로 만들어진 MipLevels를 확인
-        this->texture_arr->GetDesc(&txtDesc);
+	// 실제로 만들어진 MipLevels를 확인
+	this->texture_arr->GetDesc(&txtDesc);
+	// cout << txtDesc.MipLevels << endl;
 
-        // StagingTexture를 만들어서 하나씩 복사합니다.
-        for (size_t i = 0; i < imageArray.size(); i++) {
+	// StagingTexture를 만들어서 하나씩 복사합니다.
+	for (size_t i = 0; i < imageArray.size(); i++) {
 
-            auto& image = imageArray[i];
-            
-			context->UpdateSubresource(
-				this->texture_arr.Get(),
-				D3D11CalcSubresource(0, UINT(i), txtDesc.MipLevels),
-				nullptr,
-				image.data(),
-				width * 4,
-				width * height * 4
-			);
-        }
+		auto& image = imageArray[i];
 
-        device->CreateShaderResourceView(
-			this->texture_arr.Get(), 
+		context->UpdateSubresource(
+			this->texture_arr.Get(),
+			D3D11CalcSubresource(0, UINT(i), txtDesc.MipLevels),
 			nullptr,
-            this->shader_resource_view.GetAddressOf());
+			image.data(),
+			width * 4,
+			width * height * 4
+		);
+	}
 
-        context->GenerateMips(this->shader_resource_view.Get());
+	device->CreateShaderResourceView(
+		this->texture_arr.Get(),
+		nullptr,
+		this->shader_resource_view.GetAddressOf());
+
+	context->GenerateMips(this->shader_resource_view.Get());
 }
 
 TextureArray::TextureArray(
@@ -294,8 +295,8 @@ TextureArray::TextureArray(
 }
 
 void TextureArray::updateTextureArray(
-	ComPtr<ID3D11DeviceContext> context, 
-	ComPtr<ID3D11ShaderResourceView> target_srv, 
+	ComPtr<ID3D11DeviceContext> context,
+	ComPtr<ID3D11ShaderResourceView> target_srv,
 	UINT arr_idx
 )
 {

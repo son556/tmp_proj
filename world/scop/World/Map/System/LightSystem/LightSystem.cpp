@@ -15,6 +15,13 @@ LightSystem::LightSystem(MapUtils* minfo) : m_info(minfo)
 {
 }
 
+bool tempTestFunc(const Index3& idx)
+{
+	if (idx.x < 0 || idx.x > 15 || idx.z < 0 || idx.z > 15)
+		return true;
+	return false;
+}
+
 void LightSystem::lightBFS(queue<pair<Index2, Index3>>& que)
 {
 	Index2 s_cidx;
@@ -90,13 +97,17 @@ set<Index2> LightSystem::lightBFSAddChunks(queue<pair<Index2, Index3>>& que)
 void LightSystem::createLightMap()
 {
 	queue<pair<Index2, Index3>> que;
-	for (int i = 0; i < this->m_info->size_h; i++) {
+	/*for (int i = 0; i < this->m_info->size_h; i++) {
 		for (int j = 0; j < this->m_info->size_w; j++) {
 			Index2 c_pos = this->m_info->s_pos + Index2(j * 16, -i * 16);
 			Index2 c_idx;
 			c_idx = this->m_info->getChunkIndex(c_pos.x, c_pos.y);
 			this->setSunLight(c_idx, que);
 		}
+	}*/
+	for (auto chunkIndex : m_info->GetRenderableChunkListToRead())
+	{
+		this->setSunLight(chunkIndex, que);
 	}
 	this->lightBFS(que);
 }
@@ -357,22 +368,22 @@ void LightSystem::getIndex(Index2& c_idx, Index3& b_idx) const
 	Index2 cpos = this->m_info->chunks[c_idx.y][c_idx.x]->chunk_pos;
 	c_idx.flag = true;
 	if (b_idx.x < 0) {
-		c_idx = this->m_info->findChunkIndex(cpos.x - 16, cpos.y);
+		c_idx = this->m_info->findChunkIndex(cpos.x - 1, cpos.y);
 		b_idx.x = 16 + b_idx.x;
 		return;
 	}
 	if (b_idx.x > 15) {
-		c_idx = this->m_info->findChunkIndex(cpos.x + 16, cpos.y);
+		c_idx = this->m_info->findChunkIndex(cpos.x + 17, cpos.y);
 		b_idx.x -= 16;
 		return;
 	}
 	if (b_idx.z < 0) {
-		c_idx = this->m_info->findChunkIndex(cpos.x, cpos.y + 16);
+		c_idx = this->m_info->findChunkIndex(cpos.x, cpos.y + 1);
 		b_idx.z = 16 + b_idx.z;
 		return;
 	}
 	if (b_idx.z > 15) {
-		c_idx = this->m_info->findChunkIndex(cpos.x, cpos.y - 16);
+		c_idx = this->m_info->findChunkIndex(cpos.x, cpos.y - 17);
 		b_idx.z -= 16;
 		return;
 	}

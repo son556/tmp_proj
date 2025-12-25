@@ -12,7 +12,7 @@
 #include "Buffer.h"
 #include "Block.h"
 #include "Texture.h"
-#include "TestRender.h"
+//#include "Utils/TestUtils/TestRender.h"
 #include "ConstantBuffer.h"
 #include "TestCam.h"
 
@@ -81,7 +81,7 @@ Water::Water(MapUtils* m_info)
 		v
 	);
 
-	this->rt = make_shared<TestRender>(m_info);
+	//this->rt = make_shared<TestRender>(m_info);
 }
 
 void Water::setPipe()

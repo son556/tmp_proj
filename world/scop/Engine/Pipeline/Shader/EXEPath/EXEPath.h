@@ -8,7 +8,7 @@ public:
         std::wstring exePath(path);
         int last_idx = 0;
         for (int i = 0; i < exePath.size(); i++) {
-            if (static_cast<char>(exePath[i]) == '\\')
+            if (exePath[i] == L'\\' || exePath[i] == L'/') // 둘 다 체크
                 last_idx = i;
         }
         exePath = exePath.substr(0, last_idx);
@@ -16,6 +16,10 @@ public:
         
         wchar_t fullPath[MAX_PATH];
         GetFullPathNameW(exePath.c_str(), MAX_PATH, fullPath, nullptr);
+        std::wstring result(fullPath);
+        if (!result.empty() && result.back() != L'\\' && result.back() != L'/') {
+            result += L"\\";
+        }
         return std::wstring(fullPath);
     }
 

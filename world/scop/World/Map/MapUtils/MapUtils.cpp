@@ -30,6 +30,9 @@ MapUtils::MapUtils(
 	fill(this->blocks, this->blocks + 16 * 16 * size_h * size_w * 256, 0);
 	memset(this->light_map, 0, 16 * 16 * size_h * size_w * 256);
 	fill(this->h_map, this->h_map + 16 * 16 * size_h * size_w, 0);
+
+
+	_renderableChunkList.reserve(size_h * size_w); //TODO: 스레드 기능 완성 시 정확한 시야범위까지 capacity 확보 
 }
 
 MapUtils::~MapUtils()

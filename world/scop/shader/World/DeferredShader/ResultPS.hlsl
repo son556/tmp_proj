@@ -32,6 +32,7 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
     float3 e_color = entity_tex.Sample(sampler0, input.uv).rgb;
     float sp = shadow_map.Sample(sampler0, input.uv).r;
+    
     if (e_color.r || e_color.g || e_color.b)
         return float4(e_color * max(0.6, sp), 1);
     

@@ -272,7 +272,9 @@ void ShadowRender::renderCSM(CamType type)
 		d_graphic->renderBegin(this->csms[k]->getDBuffer().get(),
 			this->csms[k]->getDSV());
 		d_graphic->setViewPort(this->csms[k]->getViewPort());
-		for (int i = 0; i < this->m_info->size_h; i++) {
+
+		// TODO: 나중에 지울 부분
+		/*for (int i = 0; i < this->m_info->size_h; i++) {
 			for (int j = 0; j < this->m_info->size_w; j++) {
 				if (this->m_info->chunks[i][j]->render_flag == false)
 					continue;
@@ -280,6 +282,14 @@ void ShadowRender::renderCSM(CamType type)
 					d_graphic->getContext()
 				);
 			}
+		}*/
+		for (auto chunkIndex : this->m_info->GetRenderableChunkListToRead())
+		{
+			if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->render_flag == false)
+				continue;
+			this->m_info->chunks[chunkIndex.y][chunkIndex.x]->setShadowRender(
+				d_graphic->getContext()
+			);
 		}
 	}
 }
