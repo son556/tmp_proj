@@ -17,7 +17,7 @@ public:
 	uint32 vertices_idx = 0;
 	vector<VertexWater> vertices;
 	vector<uint32> indices;
-	bool render_flag = 0;
+	bool render_flag = false;
 
 private:
 	shared_ptr<Buffer<VertexWater>> v_buffer;

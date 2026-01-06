@@ -16,7 +16,7 @@ class TerrainSystem
 public:
 	TerrainSystem(MapUtils* minfo);
 	void fillChunk(Index2 const& c_idx, Index2 const& c_pos);
-	void createHeightMap();
+	void CreateChunk(const Index2 c_idx, const Index2 c_pos);
 	void createTrees();
 	void createTrees(vector<Index2>& chunks, int dir);
 	void fillWithUserPlacedBlocks(Index2 const& c_idx);

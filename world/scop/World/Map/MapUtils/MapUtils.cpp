@@ -25,7 +25,7 @@ MapUtils::MapUtils(
 	this->ev_pos.y = -this->sv_pos.y;
 
 	this->blocks = new int[16 * 16 * size_h * size_w * 256];
-	this->light_map = new atomic<uint8>[16 * 16 * size_h * size_w * 256];
+	this->light_map = new uint8[16 * 16 * size_h * size_w * 256];
 	this->h_map = new int[16 * 16 * size_h * size_w];
 	fill(this->blocks, this->blocks + 16 * 16 * size_h * size_w * 256, 0);
 	memset(this->light_map, 0, 16 * 16 * size_h * size_w * 256);

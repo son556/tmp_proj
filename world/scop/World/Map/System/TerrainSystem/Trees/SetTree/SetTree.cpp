@@ -23,12 +23,10 @@ void SetTree::makeTree(Index2 const& c_idx)
 
 			// 높이가 낮거나 바닥이 없는 경우
 			int block_type = this->m_info->findBlock(c_idx, x, h - 1, z);
-			if (h < 20 || block_type == 0 || 
-				this->m_info->findLight(c_idx, x, h, z) < 15)
+			if (h < 20 || block_type == 0 || this->m_info->findLight(c_idx, x, h, z) < 15)
 				continue;
 
-			if (block_type == BlockType::OAK_LEAVES ||
-				block_type == BlockType::OAK_LOG)
+			if (block_type == BlockType::OAK_LEAVES || block_type == BlockType::OAK_LOG)
 				continue;
 
 
@@ -39,8 +37,10 @@ void SetTree::makeTree(Index2 const& c_idx)
 			
 			// 놓을 수 있는 충분한 높이가 안되는 경우 (이미 다른 나무가 있음)
 			// 기둥은 다른 나무 밑에 못 놓게 하기 위한 조건
-			for (int y = h; y < h + 7; y++) {
-				if (this->m_info->findBlock(c_idx, x, y, z)) {
+			for (int y = h; y < h + 7; y++) 
+			{
+				if (this->m_info->findBlock(c_idx, x, y, z)) 
+				{
 					continue_flag = true;
 					break;
 				}
@@ -99,17 +99,13 @@ void SetTree::putTree(Index2 const& c_idx, int x, int y, int z)
 
 void SetTree::createTrees()
 {
-	/*for (int i = 1; i < this->m_info->size_h - 1; i++) {
+	for (int i = 1; i < this->m_info->size_h - 1; i++) {
 		for (int j = 1; j < this->m_info->size_w - 1; j++) {
 			Index2 c_pos = this->m_info->s_pos + Index2(j * 16, -i * 16);
 			Index2 c_idx;
 			c_idx = this->m_info->getChunkIndex(c_pos.x, c_pos.y);
 			this->makeTree(c_idx);
 		}
-	}*/
-	for (const auto chunkIndex : m_info->GetRenderableChunkListToRead())
-	{
-		this->makeTree(chunkIndex);
 	}
 }
 

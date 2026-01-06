@@ -73,7 +73,6 @@ void Chunk::createGeoBuffer(
 		indices.size(),
 		D3D11_BIND_INDEX_BUFFER
 	);
-	//this->render_flag = true;
 }
 
 void Chunk::createShadowBuffer(
@@ -94,12 +93,10 @@ void Chunk::createShadowBuffer(
 		indices.size(),
 		D3D11_BIND_INDEX_BUFFER
 	);
-	//this->render_flag = true;
 }
 
 void Chunk::reset()
 {
-	this->render_flag = false;
 	this->vertices_idx = 0;
 	this->max_h = -1;
 	this->tp_chunk.reset();

@@ -7,6 +7,7 @@
 
 class Chunk;
 class Graphic;
+class ThreadPool;
 
 class Map
 {
@@ -15,20 +16,21 @@ public:
 		int size_w,
 		int size_h,
 		int fov_chunk,
-		int thread_cnt,
 		HWND hwnd,
 		UINT window_w,
 		UINT window_h
 	);
-	void userPositionCheck(float x, float z);
+	~Map();
+	//void userPositionCheck(float x, float z);
 
 	// spiral 방식으로 변경하기 위한 테스트 함수
 	void TestUserPositionCheck(float x, float z);
-	void chunksSetVerticesAndIndices( // 그림자와 면 생성
-		vector<Index2> const& v_idx,
-		int st,
-		int ed
-	);
+
+	/**
+	 * @brief 그림자와 면 생성
+	 * @param c_idx 청크 인덱스
+	 */
+	void chunksSetVerticesAndIndices(const Index2 c_idx);
 	void vertexAndIndexGenerator( // goe render 용
 		Index2 const& c_idx,
 		Index2 const& adj_idx,
@@ -60,10 +62,11 @@ private:
 	Map(Map const&) = delete;
 
 private:
+	void CreateMap();
 	void terrainSetVerticesAndIndices();
 	void resetChunk(Index2 const& c_idx);
-	int checkTerrainBoundary(float x, float z) const;
-	void threadFunc(vector<Index2>& vec, int dir);
+	//int checkTerrainBoundary(float x, float z) const;
+	//void threadFunc(vector<Index2>& vec, int dir);
 	bool IsChunkInViewDistance(float userPosX, float userPosZ, float chunkPosX, float chunkPosZ);
 
 	/**
@@ -78,6 +81,11 @@ private:
 	 */
 	void UpdateChunks();
 
+	/**
+	 * @brief 청크 묶음을 frustum culling 해 줍니다.
+	 */
+	void FrustumCulling();
+
 public:
 	MapUtils _mapInfo;
 	LightSystem l_system;
@@ -86,11 +94,11 @@ public:
 
 private:
 	static vector<vec2> direction;
-
 	int _chunkFOV; // chunk 시야 범위
 	int thread_cnt;
 	float _userSightRadius;
 	set<Index2> _createNewBufferChunkIndices;
 	set<Index2> _createNewChunkIndices;
+	unique_ptr<ThreadPool> _threadPool;
 };
 

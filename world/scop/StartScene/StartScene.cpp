@@ -209,19 +209,6 @@ bool StartScene::checkClickExitButton()
 	return false;
 }
 
-void StartScene::testDummyRender()
-{
-	// Render loop 안
-	d_graphic->renderBegin();
-
-	// RenderDoc 인식용 더미 드로우
-	ComPtr<ID3D11DeviceContext> const& context = d_graphic->getContext();
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	context->Draw(3, 0);
-
-	d_graphic->renderEnd();
-}
-
 void StartScene::setPipe()
 {
 	ComPtr<ID3D11DeviceContext> const& context = d_graphic->getContext();

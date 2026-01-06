@@ -65,8 +65,6 @@ void CaveShadow::render(CamType type)
 	}*/
 	for (auto chunkIndex : this->m_info->GetRenderableChunkListToRead())
 	{
-		if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->render_flag == false)
-			continue;
 		this->m_info->chunks[chunkIndex.y][chunkIndex.x]->setShadowRender(
 			d_graphic->getContext()
 		);

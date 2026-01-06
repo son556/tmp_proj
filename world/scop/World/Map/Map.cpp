@@ -4,15 +4,18 @@
 #include "DeferredGraphics.h"
 #include "Graphics.h"
 #include "Block.h"
+#include "ThreadPool/ThreadPool.h"
 #include <time.h>
+
+#include <chrono>
+
 
 vector<vec2> Map::direction = { {0, 16}, {16, 0}, {0, -16}, {-16, 0} };
 
 Map::Map(
 	int size_w, 
 	int size_h, 
-	int fov_chunk, 
-	int thread_cnt,
+	int fov_chunk,
 	HWND hwnd,
 	UINT window_w,
 	UINT window_h
@@ -20,62 +23,66 @@ Map::Map(
 	l_system(&_mapInfo), 
 	t_system(&_mapInfo), r_system(&_mapInfo)
 {
+	auto start = std::chrono::high_resolution_clock::now();
+
 	_chunkFOV = fov_chunk;
-	this->thread_cnt = thread_cnt;
 	_userSightRadius = _chunkFOV * 8;
+	_threadPool = make_unique<ThreadPool>();
+	this->thread_cnt = _threadPool->GetThreadCount();
 
 	_mapInfo.loadGame();
-	this->t_system.createHeightMap();
-	this->l_system.createLightMap();
+	CreateMap();
 	this->t_system.createTrees();
+	FrustumCulling();
 	this->terrainSetVerticesAndIndices();
+
+	auto end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> ms_double = end - start;
+	std::cout << "실행 시간: " << ms_double.count() << "ms" << std::endl;
 }
 
+Map::~Map() = default;
 
 void Map::resetChunk(Index2 const& c_idx)
 {
-	for (int y = 0; y < 256; y++) {
-		for (int z = 0; z < 16; z++) {
-			for (int x = 0; x < 16; x++) {
-				_mapInfo.addBlock(c_idx, x, y, z, 0);
-				_mapInfo.setLight(c_idx, x, y, z, 0);
-			}
-		}
-	}
+	_mapInfo.ResetChunk(c_idx);
 }
 
-// TODO 수정 필요
-void Map::terrainSetVerticesAndIndices()
+void Map::CreateMap()
 {
-	/*vector<Index2> v_idxs;
-	int c_cnt = (_mapInfo.size_h - 2) * (_mapInfo.size_w - 2);
-	int t = c_cnt / this->thread_cnt;
-	int m = c_cnt % this->thread_cnt;
-
-	Index2 pos, c_idx;
-	for (int i = 1; i < _mapInfo.size_h - 1; i++) {
-		for (int j = 1; j < _mapInfo.size_w - 1; j++) {
-			pos = _mapInfo.s_pos + Index2(16 * j, -16 * i);
-			c_idx = _mapInfo.findChunkIndex(pos.x, pos.y);
-			v_idxs.push_back(c_idx);
+	Index2 chunkIndex;
+	Index2 chunkPos;
+	vector<Index2> chunkList;
+	chunkList.reserve(_mapInfo.size_h * _mapInfo.size_w);
+	for (int i = 0; i < _mapInfo.size_h; i++) 
+	{
+		for (int j = 0; j < _mapInfo.size_w; j++) 
+		{
+			chunkPos = _mapInfo.s_pos + Index2(j * 16, -i * 16);
+			chunkIndex = _mapInfo.getChunkIndex(chunkPos.x, chunkPos.y);
+			chunkList.push_back(chunkIndex);
+			_mapInfo.chunks[chunkIndex.y][chunkIndex.x] = make_unique<Chunk>(); // new delete는 lock을 걸음
+			_threadPool->SetTask([this, chunkIndex, chunkPos](int threadID) {this->t_system.CreateChunk(chunkIndex, chunkPos);});
 		}
 	}
+	_threadPool->Wait();
+	
+	_mapInfo.SetAdjChunkLightList(this->thread_cnt);
+	for (auto chunkIndex : chunkList)
+	{
+		_threadPool->SetTask([this, chunkIndex](int threadID) { l_system.SetLightChunk(chunkIndex, threadID); });
+	}
+	_threadPool->Wait();
+	//l_system.SetLightAdjChunkInMain();
+}
 
-	int st = 0;
-	int siz;
-	for (int i = 0; i < this->thread_cnt; i++) {
-		if (m) {
-			siz = t + 1;
-			m--;
-		}
-		else
-			siz = t;
-		this->chunksSetVerticesAndIndices(v_idxs, st, st + siz);
-		st = st + siz;
-	}*/
-
-	const vector<Index2>& renderableChunks = _mapInfo.GetRenderableChunkListToRead();
-	this->chunksSetVerticesAndIndices(renderableChunks, 0, renderableChunks.size());
+void Map::terrainSetVerticesAndIndices()
+{
+	for (auto chunkIndex : _mapInfo.GetRenderableChunkListToRead())
+	{
+		_threadPool->SetTask([this, chunkIndex](int threadID) {this->chunksSetVerticesAndIndices(chunkIndex); });
+	}
+	//_threadPool->Wait();
 }
 
 void Map::vertexAndIndexGenerator(
@@ -239,11 +246,7 @@ void Map::setSightChunk(int chunk_cnt)
 	_chunkFOV = chunk_cnt;
 }
 
-void Map::chunksSetVerticesAndIndices(
-	vector<Index2> const& v_idx,
-	int st,
-	int ed
-)
+void Map::chunksSetVerticesAndIndices(const Index2 c_idx)
 {
 	static const Index3 move_arr[6] = {
 		Index3(0, 1, 0),
@@ -259,236 +262,50 @@ void Map::chunksSetVerticesAndIndices(
 	vector<uint32> s_indices;
 	uint32 s_idx;
 	uint32 idx;
-	ed = min(ed, v_idx.size());
-	for (int i = st; i < ed; i++) {
-		Index2 const& c_idx = v_idx[i];
-		_mapInfo.chunks[c_idx.y][c_idx.x]->vertices_idx = 0;
-		Index2 apos = _mapInfo.chunks[c_idx.y][c_idx.x]->chunk_pos;
-		s_idx = 0;
-		idx = 0;
-		for (int dir = 0; dir < 6; dir++) {
-			Index2 pos = apos + Index2(16 * move_arr[dir].x,
-				16 * move_arr[dir].z);
-			Index2 adj_idx = _mapInfo.findChunkIndex(pos.x, pos.y);
-			this->vertexAndIndexGenerator(
-				c_idx,
-				adj_idx,
-				move_arr[dir],
-				dir,
-				vertices_geo,
-				&indices,
-				&idx
-			);
-			this->vertexShadowGenerator(
-				c_idx,
-				move_arr[dir],
-				dir,
-				vertices_shadow,
-				&s_indices,
-				&s_idx
-			);
-		}
-		this->vertexAndIndexGeneratorTP(c_idx);
-		this->vertexAndIndexGeneratorWater(c_idx);
-		_mapInfo.chunks[c_idx.y][c_idx.x]->createGeoBuffer(
-			d_graphic->getDevice(),
-			vertices_geo,
-			indices
-		);
-		_mapInfo.chunks[c_idx.y][c_idx.x]->createShadowBuffer(
-			d_graphic->getDevice(),
-			vertices_shadow,
-			s_indices
-		);
-		vertices_shadow.clear();
-		vertices_geo.clear();
-		s_indices.clear();
-		indices.clear();
-	}
-}
 
-int Map::checkTerrainBoundary(float x, float z) const
-{
-	float r = 16.f * _chunkFOV;
-	int mask = 0;
-	if (x - r < _mapInfo.sv_pos.x)
-		mask |= 1 << 0; // left out(-x)
-	if (x + r > _mapInfo.ev_pos.x)
-		mask |= 1 << 1; // right out(+x)
-	if (z + r > _mapInfo.sv_pos.y)
-		mask |= 1 << 2; // back out (+z)
-	if (z - r < _mapInfo.ev_pos.y)
-		mask |= 1 << 3; // front out (-z)
-	return mask;
-}
-
-void Map::userPositionCheck(float x, float z)
-{
-	int mask = this->checkTerrainBoundary(x, z);
-	vector<Index2> v_idxs, f_idxs;
-	Index2 cidx, cpos;
-	if (mask == 1) { // out left
-		for (int i = 0; i < _mapInfo.size_h; i++) {
-			if (i && i < _mapInfo.size_h - 1) { // 보여주기
-				cpos = Index2(_mapInfo.s_pos.x, _mapInfo.s_pos.y - 16 * i);
-				cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-				v_idxs.push_back(cidx);
-			}
-			cpos.x = _mapInfo.s_pos.x - 16;
-			cpos.y = _mapInfo.s_pos.y - 16 * i;
-			cidx = _mapInfo.getChunkIndex(cpos.x, cpos.y);
-			_mapInfo.chunks[cidx.y][cidx.x]->reset();
-			_mapInfo.chunks[cidx.y][cidx.x]->setPos(cpos);
-			f_idxs.push_back(cidx);
-		}
-		_mapInfo.sv_pos.x -= 16;
-		_mapInfo.s_pos.x -= 16;
-		_mapInfo.ev_pos.x -= 16;
-	}
-	else if (mask == 2) 
-	{ // out right
-		for (int i = 0; i < _mapInfo.size_h; i++) 
-		{
-			if (i && i < _mapInfo.size_h - 1) 
-			{
-				cpos = Index2(_mapInfo.ev_pos.x, _mapInfo.s_pos.y - 16 * i);
-				cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-				v_idxs.push_back(cidx);
-			}
-			cpos.x = _mapInfo.ev_pos.x + 16;
-			cpos.y = _mapInfo.s_pos.y - 16 * i;
-			cidx = _mapInfo.getChunkIndex(cpos.x, cpos.y);
-			_mapInfo.chunks[cidx.y][cidx.x]->reset();
-			_mapInfo.chunks[cidx.y][cidx.x]->setPos(cpos);
-			f_idxs.push_back(cidx);
-		}
-		_mapInfo.sv_pos.x += 16;
-		_mapInfo.s_pos.x += 16;
-		_mapInfo.ev_pos.x += 16;
-	}
-	else if (mask == 4) 
-	{ // out +z
-		for (int i = 0; i < _mapInfo.size_w; i++) 
-		{
-			if (i && i < _mapInfo.size_w - 1) 
-			{
-				cpos = Index2(_mapInfo.s_pos.x + 16 * i, _mapInfo.s_pos.y);
-				cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-				v_idxs.push_back(cidx);
-			}
-			cpos.x = _mapInfo.s_pos.x + 16 * i;
-			cpos.y = _mapInfo.s_pos.y + 16;
-			cidx = _mapInfo.getChunkIndex(cpos.x, cpos.y);
-			_mapInfo.chunks[cidx.y][cidx.x]->reset();
-			_mapInfo.chunks[cidx.y][cidx.x]->setPos(cpos);
-			f_idxs.push_back(cidx);
-		}
-		_mapInfo.sv_pos.y += 16;
-		_mapInfo.s_pos.y += 16;
-		_mapInfo.ev_pos.y += 16;
-	}
-	else if (mask == 8) { // out -z
-		for (int i = 0; i < _mapInfo.size_w; i++) 
-		{
-			if (i && i < _mapInfo.size_w - 1) 
-			{
-				cpos = Index2(_mapInfo.s_pos.x + 16 * i, _mapInfo.ev_pos.y);
-				cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-				v_idxs.push_back(cidx);
-			}
-			cpos.x = _mapInfo.s_pos.x + 16 * i;
-			cpos.y = _mapInfo.ev_pos.y - 16;
-			cidx = _mapInfo.getChunkIndex(cpos.x, cpos.y);
-			_mapInfo.chunks[cidx.y][cidx.x]->reset();
-			_mapInfo.chunks[cidx.y][cidx.x]->setPos(cpos);
-			f_idxs.push_back(cidx);
-		}
-		_mapInfo.sv_pos.y -= 16;
-		_mapInfo.s_pos.y -= 16;
-		_mapInfo.ev_pos.y -= 16;
-	}
-	if (f_idxs.size()) 
+	_mapInfo.chunks[c_idx.y][c_idx.x]->vertices_idx = 0;
+	Index2 apos = _mapInfo.chunks[c_idx.y][c_idx.x]->chunk_pos;
+	s_idx = 0;
+	idx = 0;
+	for (int dir = 0; dir < 6; dir++)
 	{
-		for (Index2& c_idx : f_idxs) 
-		{
-			this->resetChunk(c_idx);
-			this->t_system.fillChunk(c_idx, 
-				_mapInfo.chunks[c_idx.y][c_idx.x]->chunk_pos);
-			this->t_system.fillWithUserPlacedBlocks(c_idx);
-			this->l_system.createLightMap(f_idxs, v_idxs);
-		}
+		Index2 pos = apos + Index2(16 * move_arr[dir].x,
+			16 * move_arr[dir].z);
+		Index2 adj_idx = _mapInfo.findChunkIndex(pos.x, pos.y);
+		this->vertexAndIndexGenerator(
+			c_idx,
+			adj_idx,
+			move_arr[dir],
+			dir,
+			vertices_geo,
+			&indices,
+			&idx
+		);
+		this->vertexShadowGenerator(
+			c_idx,
+			move_arr[dir],
+			dir,
+			vertices_shadow,
+			&s_indices,
+			&s_idx
+		);
 	}
-	if (v_idxs.size())
-		this->threadFunc(v_idxs, mask);
-}
-
-void Map::threadFunc(vector<Index2>& vec, int dir)
-{
-	int v_size = vec.size();
-	this->t_system.createTrees(vec, dir); // 새로 만든나무와 인접했던 나무 추가
-	for (int i = 0; i < vec.size(); i++) {
-		this->t_system.fillWithUserPlacedBlocks(vec[i]);
-	}
-
-	set<Index2> book;
-	for (int i = 0; i < vec.size(); i++)
-		book.insert(vec[i]);
-
-	Index2 cidx;
-	Index2 cpos;
-	if (dir == 1) {
-		for (int i = 1; i < _mapInfo.size_h - 1; i++) {
-			cpos = _mapInfo.sv_pos + Index2(16, -16 * (i - 1));
-			cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-			if (book.find(cidx) == book.end())
-				vec.push_back(cidx);
-		}
-	}
-
-	else if (dir == 2) {
-		for (int i = 1; i < _mapInfo.size_h - 1; i++) {
-			cpos = Index2(_mapInfo.ev_pos.x - 32,
-				_mapInfo.sv_pos.y - 16 * (i - 1));
-			cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-			if (book.find(cidx) == book.end())
-				vec.push_back(cidx);
-		}
-	}
-
-	else if (dir == 4) {
-		for (int i = 1; i < _mapInfo.size_w - 1; i++) {
-			cpos = _mapInfo.sv_pos + Index2(16 * (i - 1), -16);
-			cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-			if (book.find(cidx) == book.end())
-				vec.push_back(cidx);
-		}
-	}
-
-	else {
-		for (int i = 1; i < _mapInfo.size_w - 1; i++) {
-			cpos = Index2(_mapInfo.sv_pos.x + 16 * (i - 1),
-				_mapInfo.ev_pos.y + 32);
-			cidx = _mapInfo.findChunkIndex(cpos.x, cpos.y);
-			if (book.find(cidx) == book.end())
-				vec.push_back(cidx);
-		}
-	}
-
-	int t = vec.size() / this->thread_cnt;
-	int m = vec.size() % this->thread_cnt;
-	int st = 0;
-	int siz;
-	int idx = 0;
-	for (int i = 0; i < this->thread_cnt; i++) {
-		if (m) {
-			siz = t + 1;
-			m--;
-		}
-		else
-			siz = t;
-		this->chunksSetVerticesAndIndices(vec, st, st + siz);
-		st = st + siz;
-	}
+	this->vertexAndIndexGeneratorTP(c_idx);
+	this->vertexAndIndexGeneratorWater(c_idx);
+	_mapInfo.chunks[c_idx.y][c_idx.x]->createGeoBuffer(
+		d_graphic->getDevice(),
+		vertices_geo,
+		indices
+	);
+	_mapInfo.chunks[c_idx.y][c_idx.x]->createShadowBuffer(
+		d_graphic->getDevice(),
+		vertices_shadow,
+		s_indices
+	);
+	vertices_shadow.clear();
+	vertices_geo.clear();
+	s_indices.clear();
+	indices.clear();
 }
 
 
@@ -599,6 +416,21 @@ void Map::UpdateChunks()
 	}
 }
 
+void Map::FrustumCulling()
+{
+	//TODO: frusutm culling 로직 작성 할 것(청크를 개별 단위에서 묶음으로 고친 후)
+
+	for (int i = 0; i < _mapInfo.size_h; i++) 
+	{
+		for (int j = 0; j < _mapInfo.size_w; j++) 
+		{
+			Index2 c_pos = _mapInfo.s_pos + Index2(j * 16, -i * 16);
+			Index2 c_idx = _mapInfo.findChunkIndex(c_pos.x, c_pos.y);
+			_mapInfo.AddChunkToRenderableChunkList(c_idx);
+		}
+	}
+}
+
 void Map::TestUserPositionCheck(float x, float z)
 {
 	_createNewChunkIndices.clear();
@@ -624,11 +456,7 @@ void Map::TestUserPositionCheck(float x, float z)
 			Chunk* chunk = _mapInfo.chunks[chunkIndex.y][chunkIndex.x].get();
 			
 			if (IsChunkInViewDistance(x, z, chunkPos.x, chunkPos.y) == false)
-			{
-				if (chunkIndex.flag == true) // 시야 범위 벗어난 경우
-					chunk->render_flag = false;
 				continue;
-			}
 
 			if (chunkIndex.flag == false) // 새로 만들어야 하는 부분 (빛 계산)
 			{
@@ -642,7 +470,6 @@ void Map::TestUserPositionCheck(float x, float z)
 				chunk->setPos(chunkPos);
 				CheckChunkVertices(chunkIndex, { x, z });
 			}
-			chunk->render_flag = true;
 			_mapInfo.AddChunkToRenderableChunkList(chunkIndex);
 		}
 	}

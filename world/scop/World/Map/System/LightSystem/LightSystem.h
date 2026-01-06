@@ -9,11 +9,8 @@ public:
 	~LightSystem() = default;
 	
 public:
-	void createLightMap(); // 빛을 모든 chunk에 대해 채움
-	void createLightMap( // 빛을 특정청크에 대해 채움
-		vector<Index2> const& new_cidxs,
-		vector<Index2>& renew_cidxs
-	);
+	void SetLightChunk(const Index2 chunkIndex, const int threadID);
+	void SetLightAdjChunkInMain();
 
 	/**
 	 * 없어진 블록에 대한 light 계산.
@@ -41,16 +38,9 @@ private:
 
 private:
 	void resetLight(Index2 const& c_idx);
-	void setSunLight(Index2 const& c_idx, queue<pair<Index2, Index3>> &que);
-	void lightBFS(queue<pair<Index2, Index3>>& que);
-
-	/**
-	 * 캐릭터의 시야범위가 맵을 벗어나서 청크를 만들 때 빛 갱신 후 갱신된 청크 인덱스들 반환.
-	 * 
-	 * \param que 갱신이 이루어질 시작점
-	 * \return 갱신된 청크 인덱스 목록
-	 */
-	set<Index2> lightBFSAddChunks(queue<pair<Index2, Index3>>& que);
+	void setSunLight(Index2 const& c_idx, queue<tuple<Index2, Index3, uint8>>& que);
+	void lightBFS(queue<tuple<Index2, Index3, uint8>>& que, const int threadID, const Index2 nowChunkIndex);
+	bool AtomicMax(uint8& target, uint8 cmp);
 
 private:
 	/**

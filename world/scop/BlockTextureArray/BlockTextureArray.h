@@ -12,7 +12,7 @@ public:
 
 private:
 	BlockTextureArray() = delete;
-	BlockTextureArray const& operator=(BlockTextureArray const&) = delete;
+	BlockTextureArray& operator=(BlockTextureArray const&) = delete;
 	BlockTextureArray(BlockTextureArray const&) = delete;
 	~BlockTextureArray() = delete;
 

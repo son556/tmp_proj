@@ -51,21 +51,28 @@ public:
 		return res;
 	}
 
-	inline int findBlock(Index2 const& c_idx, int x, int y, int z) const {
-		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) +
-			x + 16 * (z + 16 * y);
+	inline int findBlock(Index2 const& c_idx, int x, int y, int z) const 
+	{
+		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) + x + 16 * (z + 16 * y);
 		if (x < 0 || x > 15 || z < 0 || z > 15 || y < 0 || y > 255)
 			return this->findAdjBlock(c_idx, x, y, z);
 		return this->blocks[idx];
 	}
 
-	inline int findBlock(Index2 const& c_idx, Index3 const& b_idx) const {
+	inline int findBlock(Index2 const& c_idx, Index3 const& b_idx) const 
+	{
 		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) +
 			b_idx.x + 16 * (b_idx.z + 16 * b_idx.y);
 		if (b_idx.x < 0 || b_idx.x > 15 || b_idx.z < 0 || b_idx.z > 15
 			|| b_idx.y < 0 || b_idx.y > 255)
 			return this->findAdjBlock(c_idx, b_idx.x, b_idx.y, b_idx.z);
 		return this->blocks[idx];
+	}
+
+	inline void ResetChunkBlock(const Index2 c_idx)
+	{
+		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y);
+		memset(this->blocks + idx, 0, 16 * 16 * 256 * sizeof(int));
 	}
 
 	inline void addBlock(Index2 const& c_idx, int x, int y, int z, int type) {
@@ -79,10 +86,16 @@ public:
 			b_idx.x + 16 * (b_idx.z + 16 * b_idx.y);
 		this->blocks[idx] = type;
 	}
+
+	inline void ResetChunk(const Index2 c_idx)
+	{
+		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y);
+		memset(this->blocks + idx, 0, 16 * 16 * 256 * sizeof(int));
+		memset(this->light_map + idx, 0, 16 * 16 * 256);
+	}
 	
 	inline int findHeight(Index2 const& c_idx, Index2 const& h_idx) const {
-		int idx = 16 * 16 * (c_idx.x + this->size_w * c_idx.y) +
-			h_idx.x + 16 * h_idx.y;
+		int idx = 16 * 16 * (c_idx.x + this->size_w * c_idx.y) + h_idx.x + 16 * h_idx.y;
 		return this->h_map[idx];
 	}
 	/**
@@ -108,8 +121,40 @@ public:
 		int idx = 16 * 16 * (c_idx.x + this->size_w * c_idx.y) + x + 16 * z;
 		this->h_map[idx] = h;
 	}
+
+	inline void ResetChunkHeight(const Index2 c_idx)
+	{
+		int idx = 16 * 16 * (c_idx.x + this->size_w * c_idx.y);
+		memset(this->h_map + idx, 0, 16 * 16 * sizeof(int));
+	}
 	
 	// light
+
+	/**
+	 * @brief light 값을 반환 합니다. (정확한 인덱스의 경우에만 사용할 것)
+	 * @param idx light block의 인덱스
+	 * @return light value
+	 */
+	inline uint8 findLight(int idx)
+	{
+		return this->light_map[idx];
+	}
+
+	inline void setLight(int idx, uint8 light)
+	{
+		this->light_map[idx] = light;
+	}
+
+	/**
+	 * @brief light map의 원소의 참조를 받아옵니다.
+	 * @param idx light map 인덱스
+	 * @return 
+	 */
+	inline uint8& getLight(int idx)
+	{
+		return this->light_map[idx];
+	}
+
 	inline uint8 findLight(Index2 const& c_idx, int x, int y, int z) const {
 		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) +
 			x + 16 * (z + 16 * y);
@@ -137,6 +182,17 @@ public:
 		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y) +
 			b_idx.x + 16 * (b_idx.z + 16 * b_idx.y);
 		this->light_map[idx] = type;
+	}
+
+	inline void SetLight(int idx, uint8 type)
+	{
+		this->light_map[idx] = type;
+	}
+
+	inline void ResetChunkLight(const Index2 c_idx)
+	{
+		int idx = 16 * 16 * 256 * (c_idx.x + this->size_w * c_idx.y);
+		memset(this->blocks + idx, 0, 16 * 16 * 256);
 	}
 
 	// book manage
@@ -370,6 +426,28 @@ private:
 	}
 
 public:
+	inline vector<vector<Index2>>& GetAdjChunkLightList()
+	{
+		return _adjChunkLightList;
+	}
+
+	inline void SetAdjChunkLightList(int threadCount)
+	{
+		_adjChunkLightList.resize(threadCount);
+	}
+
+	inline void ResetAdjChunkLightList()
+	{
+		for (auto& chunkLights : _adjChunkLightList)
+			chunkLights.clear();
+	}
+
+	inline void AddAdjChunkLightToList(int threadIdx, Index2 idxAndLight)
+	{
+		_adjChunkLightList[threadIdx].push_back(idxAndLight);
+	}
+
+public:
 	void saveGame();
 	void loadGame();
 
@@ -402,7 +480,8 @@ public:
 private:
 	int* blocks;
 	int* h_map; // x z 위치에서 블록의 최고 높이(블록의 윗면 높이를 기준으로 함)
-	atomic<uint8>* light_map; // TODO: atomic으로 변경
+	uint8* light_map;
 	vector<Index2> _renderableChunkList;
+	vector<vector<Index2>> _adjChunkLightList;
 };
 

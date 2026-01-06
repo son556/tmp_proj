@@ -9,19 +9,22 @@ public:
 	ThreadPool();
 	~ThreadPool();
 	void Wait();
-	void SetTask(function<void()>&& taskFunc);
+	void SetTask(function<void(int)>&& taskFunc);
+	int GetThreadCount() const;
 
 private:
 	void CreateThread();
 	void worker(int threadIndex);
 
 private:
-	vector<thread> m_threads;
-	condition_variable m_notifyTask;
-	queue<function<void()>> m_tasks;
-	mutex m_taskMutex;
-	size_t m_threadCnt = -1;
-	bool m_stop = false;
+	vector<thread> _threads;
+	condition_variable _notifyTask;
+	condition_variable _notifyMain;
+	queue<function<void(int)>> _tasks;
+	std::mutex _taskMutex;
+	size_t _threadCnt = -1;
+	atomic<int> _workingTrheadCnt = 0;
+	bool _stop = false;
 
 private:
 	ThreadPool(const ThreadPool&) = delete;

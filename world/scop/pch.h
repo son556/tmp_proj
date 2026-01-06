@@ -6,19 +6,20 @@
 
 #include <windows.h>
 #include <math.h>
+#include <cstdint>
 #include "DirectXMath.h"
 #include "SimpleMath.h"
 #include "WICTextureLoader11.h"
 
-using int8 = __int8;
-using int16 = __int16;
-using int32 = __int32;
-using int64 = __int64;
+using int8 = int8_t;
+using int16 = int16_t;
+using int32 = int32_t;
+using int64 = int64_t;
 
-using uint8 = unsigned __int8;
-using uint16 = unsigned __int16;
-using uint32 = unsigned __int32;
-using uint64 = unsigned __int64;
+using uint8 = uint8_t;
+using uint16 = uint16_t;
+using uint32 = uint32_t;
+using uint64 = uint64_t;
 
 using vec2 = DirectX::SimpleMath::Vector2;
 using vec3 = DirectX::SimpleMath::Vector3;
@@ -55,6 +56,8 @@ struct MVP
 #include <set>
 #include <list>
 #include <queue>
+#include <unordered_map>
+#include <tuple>
 
 using namespace std;
 
@@ -160,6 +163,9 @@ extern bool in_water;
 extern int w_width;
 extern int w_height;
 extern bool first_view;
+
+constexpr int CHUNK_SIZE = 16 * 16 * 256;
+constexpr int TOTAL_NODE_COUNT = CHUNK_SIZE * 5;
 
 
 inline void printVec3(string const& name, vec3 const& v) {

@@ -14,15 +14,13 @@ Terrain::Terrain(
 	HWND hwnd,
 	UINT width,
 	UINT height,
-	int fov_chunk,
-	int thread_cnt
+	int fov_chunk
 )
 {
 	this->m_manager = make_unique<Map>(
 		size_w,
 		size_h,
 		fov_chunk,
-		thread_cnt,
 		hwnd,
 		width,
 		height
@@ -140,22 +138,23 @@ void Terrain::putBlock(
 			if (type > 0 && type != BlockType::OAK_LEAVES)
 				this->m_manager->l_system.BFSLightBlockAdd(cidx, bidx, v_idx);
 			v_idx.push_back(cidx);
-			this->m_manager->chunksSetVerticesAndIndices(v_idx, 0, v_idx.size());
+			for (auto chunkIndex : v_idx)
+				this->m_manager->chunksSetVerticesAndIndices(chunkIndex);
 			//FmodSound::playPutBlockSound(BlockType::AIR); // 놓는 소리 고정
 		}
 	}
 }
 
-//#include "Utils/TestUtils/TestPrint.h"
+#include "Utils/TestUtils/TestPrint.h"
 
 void Terrain::deleteBlock(vec3 const& ray_pos, vec3 const& ray_dir)
 {
 	WorldIndex widx = this->m_manager->_mapInfo.pickBlock(ray_pos, ray_dir);
 	if (widx.flag) {
-		/*TestPrint::PrintWidx(widx);
+		TestPrint::PrintWidx(widx);
 		Index2 cpos = this->m_manager->_mapInfo.chunks[widx.c_idx.y][widx.c_idx.x]->chunk_pos;
 		cout << "chunk pos: ";
-		TestPrint::PrintIndex2(cpos);*/
+		TestPrint::PrintIndex2(cpos);
 		int type = this->m_manager->_mapInfo.findBlock(widx.c_idx, widx.b_idx);
 		this->m_manager->_mapInfo.writeBookAboutBlockStatus(
 			this->m_manager->_mapInfo.chunks[widx.c_idx.y][widx.c_idx.x]->chunk_pos,
@@ -213,7 +212,8 @@ void Terrain::deleteBlock(vec3 const& ray_pos, vec3 const& ray_dir)
 		// 그림자 갱신
 		if (type > 0 && type != BlockType::OAK_LEAVES)
 			this->m_manager->l_system.BFSLightBlockDelete(widx.c_idx, widx.b_idx, v_idx);
-		this->m_manager->chunksSetVerticesAndIndices(v_idx, 0, v_idx.size());
+		for (auto chunkIndex : v_idx)
+			this->m_manager->chunksSetVerticesAndIndices(chunkIndex);
 		//FmodSound::playPutBlockSound(static_cast<BlockType>(type));
 	}
 }
@@ -242,7 +242,7 @@ void Terrain::setSightChunk(int cnt)
 
 void Terrain::userPositionCheck(float x, float z)
 {
-	this->m_manager->userPositionCheck(x, z);
+	//this->m_manager->userPositionCheck(x, z);
 	//this->m_manager->TestUserPositionCheck(x, z);
 }
 

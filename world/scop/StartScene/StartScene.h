@@ -26,7 +26,6 @@ public:
 	bool checkClickExitButton();
 
 private:
-	void testDummyRender(); //TODO 확인용 더미렌더
 	StartScene& operator=(StartScene const&) = delete;
 	StartScene(StartScene const&) = delete;
 

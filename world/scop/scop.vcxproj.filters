@@ -708,10 +708,16 @@
     <ClInclude Include="World\Utils\WorldUtils.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="World\Map\ThreadPool.h">
+    <ClInclude Include="World\Utils\ThreadPool\ThreadPool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Utils\TestUtils\TestPrint.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="World\Utils\LockFreeQueue.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="World\Utils\MemoryPool\MemoryPool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -989,10 +995,16 @@
     <ClCompile Include="World\Utils\WorldUtils.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="World\Map\ThreadPool.cpp">
+    <ClCompile Include="World\Utils\ThreadPool\ThreadPool.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Utils\TestUtils\TestPrint.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="World\Utils\LockFreeQueue.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="World\Utils\MemoryPool\MemoryPool.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

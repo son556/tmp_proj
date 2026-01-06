@@ -2,6 +2,10 @@
 #include "LightSystem.h"
 #include "Chunk.h"
 
+#include <mutex>
+
+static mutex test_mutex;
+
 const vector<Index3> move_dir = {
 		{0, 1, 0},
 		{0, -1, 0},
@@ -15,15 +19,34 @@ LightSystem::LightSystem(MapUtils* minfo) : m_info(minfo)
 {
 }
 
-bool tempTestFunc(const Index3& idx)
+void LightSystem::SetLightChunk(const Index2 chunkIndex, const int threadID)
 {
-	if (idx.x < 0 || idx.x > 15 || idx.z < 0 || idx.z > 15)
-		return true;
-	return false;
+	queue<tuple<Index2, Index3, uint8>> que;
+	this->setSunLight(chunkIndex, que);
+	this->lightBFS(que, threadID, chunkIndex);
 }
 
-void LightSystem::lightBFS(queue<pair<Index2, Index3>>& que)
+void LightSystem::SetLightAdjChunkInMain()
 {
+	for (auto adjchunks : this->m_info->GetAdjChunkLightList())
+	{
+		for (auto IndexAndLight : adjchunks)
+		{
+			if (IndexAndLight.y > this->m_info->findLight(IndexAndLight.x))
+				this->m_info->setLight(IndexAndLight.x, IndexAndLight.y);
+		}
+	}
+	this->m_info->ResetAdjChunkLightList();
+}
+
+/*
+* 1. 빛 전파 -> (전파된 빛을 adj 큐에 넣음(light map 에 적지 않음), 일이 끝나면 chunk_cnt--; atomic<int> chunk_cnt
+* 2. 매니저 스레드 -> (adj 큐에 들어온 데이터를 확인 후 light_map에 옮겨 적음, chunk_cnt 가 0 이고 adj 큐의 크기가 0일 때 탈출)
+*/
+
+// TODO 내 청크만 bfs 계산하고 다른 청크 넘어가는 경우는 따로 모아서 처리하는 방법?
+void LightSystem::lightBFS(queue<tuple<Index2, Index3, uint8>>& que, const int threadID, const Index2 nowChunkIndex)
+{ // 단점: 매 단계 Atomic 연산으로 인한 캐시 라인 경합(False Sharing) 및 무효화 비용이 매우 높음.
 	Index2 s_cidx;
 	Index3 s_bidx;
 	Index2 n_cidx;
@@ -32,12 +55,15 @@ void LightSystem::lightBFS(queue<pair<Index2, Index3>>& que)
 	uint8 n_light;
 	int block_type;
 
-	while (que.size()) {
-		s_cidx = que.front().first;
-		s_bidx = que.front().second;
-		light = this->m_info->findLight(s_cidx, s_bidx);
+	while (que.size())
+	{
+		s_cidx = get<0>(que.front());
+		s_bidx = get<1>(que.front());
+		light = get<2>(que.front());
 		que.pop();
-		for (int i = 0; i < 6; i++) {
+
+		for (int i = 0; i < 6; i++)
+		{
 			n_cidx = s_cidx;
 			n_bidx = s_bidx + move_dir[i];
 			this->getIndex(n_cidx, n_bidx);
@@ -48,104 +74,44 @@ void LightSystem::lightBFS(queue<pair<Index2, Index3>>& que)
 			block_type = this->m_info->findBlock(n_cidx, n_bidx);
 			if (block_type > 0 && block_type != BlockType::OAK_LEAVES)
 				continue;
-			n_light = this->m_info->findLight(n_cidx, n_bidx);
-			if (light > n_light + 1) {
-				this->m_info->setLight(n_cidx, n_bidx, light - 1);
-				que.push({ n_cidx, n_bidx });
+			
+			int idx = 16 * 16 * 256 * (n_cidx.x + this->m_info->size_w * n_cidx.y) + n_bidx.x + 16 * (n_bidx.z + 16 * n_bidx.y);
+			n_light = this->m_info->findLight(idx);
+			if (light > n_light + 1)
+			{
+				if (AtomicMax(this->m_info->getLight(idx), light - 1))
+					que.push({ n_cidx, n_bidx, light - 1 });
+				
+				//{ // test mutex
+				//	que.push({ n_cidx, n_bidx, light - 1 });
+				//	lock_guard legion_lock(test_mutex);
+				//	this->m_info->setLight(n_cidx, n_bidx, light - 1);
+				//}
 			}
 		}
 	}
 }
 
-set<Index2> LightSystem::lightBFSAddChunks(queue<pair<Index2, Index3>>& que)
+bool LightSystem::AtomicMax(uint8& target, uint8 newValue)
 {
-	Index2 s_cidx;
-	Index3 s_bidx;
-	Index2 n_cidx;
-	Index3 n_bidx;
-	uint8 light;
-	uint8 n_light;
-	set<Index2> book;
-	int block_type;
+	std::atomic_ref<uint8> atomicTarget(target);
+	uint8 prevValue = atomicTarget.load(std::memory_order_relaxed);
 
-	while (que.size()) {
-		s_cidx = que.front().first;
-		s_bidx = que.front().second;
-		light = this->m_info->findLight(s_cidx, s_bidx);
-		book.insert(s_cidx);
-		que.pop();
-		for (int i = 0; i < 6; i++) {
-			n_cidx = s_cidx;
-			n_bidx = s_bidx + move_dir[i];
-			this->getIndex(n_cidx, n_bidx);
-			if (n_cidx.flag == false)
-				continue;
-			block_type = this->m_info->findBlock(n_cidx, n_bidx);
-			if (block_type > 0 && block_type != BlockType::OAK_LEAVES)
-				continue;
-			n_light = this->m_info->findLight(n_cidx, n_bidx);
-			if (light > n_light + 1) {
-				this->m_info->setLight(n_cidx, n_bidx, light - 1);
-				que.push({ n_cidx, n_bidx });
-			}
-		}
-	}
-	return book;
-}
-
-// TODO: 이 부분 수정 스레드 이용
-void LightSystem::createLightMap()
-{
-	queue<pair<Index2, Index3>> que;
-	/*for (int i = 0; i < this->m_info->size_h; i++) {
-		for (int j = 0; j < this->m_info->size_w; j++) {
-			Index2 c_pos = this->m_info->s_pos + Index2(j * 16, -i * 16);
-			Index2 c_idx;
-			c_idx = this->m_info->getChunkIndex(c_pos.x, c_pos.y);
-			this->setSunLight(c_idx, que);
-		}
-	}*/
-	for (auto chunkIndex : m_info->GetRenderableChunkListToRead())
+	while (prevValue < newValue)
 	{
-		this->setSunLight(chunkIndex, que);
+		// CAS 시도: 성공하면 내가 이 구역의 빛을 결정한 것임
+		if (atomicTarget.compare_exchange_weak(prevValue, newValue, std::memory_order_relaxed))
+			return true;
 	}
-	this->lightBFS(que);
-}
-
-void LightSystem::createLightMap(
-	vector<Index2> const& new_cidxs,
-	vector<Index2>& renew_cidxs
-)
-{
-	queue<pair<Index2, Index3>> que;
-	set<Index2> check_list;
-	for (Index2 const& cidx : new_cidxs) {
-		this->resetLight(cidx);
-		this->setSunLight(cidx, que);
-		check_list.insert(cidx);
-	}
-	for (Index2 const& cidx : renew_cidxs)
-		check_list.insert(cidx);
-
-	set<Index2> const& book = this->lightBFSAddChunks(que);
-	for (Index2 const& cidx : book) {
-		if (check_list.find(cidx) != check_list.end())
-			continue;
-		renew_cidxs.push_back(cidx);
-	}
+	return false;
 }
 
 void LightSystem::resetLight(Index2 const& c_idx)
 {
-	for (int y = 0; y < this->m_info->chunks[c_idx.y][c_idx.x]->max_h + 1; y++) {
-		for (int z = 0; z < 16; z++) {
-			for (int x = 0; x < 16; x++)
-				this->m_info->setLight(c_idx, x, y, z, 0);
-		}
-	}
+	this->m_info->ResetChunkLight(c_idx);
 }
 
-void LightSystem::setSunLight(Index2 const& c_idx, queue<pair<Index2, Index3>>& que)
+void LightSystem::setSunLight(Index2 const& c_idx, queue<tuple<Index2, Index3, uint8>>& que)
 {
 	for (int z = 0; z < 16; z++) {
 		for (int x = 0; x < 16; x++) {
@@ -154,8 +120,8 @@ void LightSystem::setSunLight(Index2 const& c_idx, queue<pair<Index2, Index3>>& 
 				if (block_type > 0 && block_type != BlockType::OAK_LEAVES) {
 					break;
 				}
-				que.push({ c_idx, Index3(x, y, z) });
 				this->m_info->setLight(c_idx, x, y, z, 15);
+				que.push(make_tuple(c_idx, Index3(x, y, z), 15));
 			}
 		}
 	}

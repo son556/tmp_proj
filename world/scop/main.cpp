@@ -14,6 +14,7 @@
 #include "GUIManager.h"
 #include "StartScene.h"
 #include "BlockTextureArray.h"
+#include <locale> // 한글 cout 나오게
 
 //#include "FmodSound.h"
 
@@ -76,7 +77,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     GetClientRect(hWnd, &client_rect);
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SCOP));
 
-    Terrain terrain(12, 12, hWnd, w_width, w_height, 1, 10); // 짝수 단위로만
+    Terrain terrain(12, 12, hWnd, w_width, w_height, 1); // 짝수 단위로만
     CompositeRenderer composite_renderer;
     BlockTextureArray::Init();
     GUIManager gui_manager;

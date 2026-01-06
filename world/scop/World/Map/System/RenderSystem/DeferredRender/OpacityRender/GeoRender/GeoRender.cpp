@@ -128,21 +128,8 @@ void GeoRender::render(
 	this->setPipe(opt.ccw_flag);
 	this->setConstantBuffer(type);
 
-	// TODO : 나중에 삭제 할 부분
-	/*for (int i = 0; i < this->m_info->size_h; i++) {
-		for (int j = 0; j < this->m_info->size_w; j++) {
-			if (this->m_info->chunks[i][j]->render_flag == false)
-				continue;
-			this->m_info->chunks[i][j]->setGeoRender(
-				d_graphic->getContext()
-			);
-		}
-	}*/
-
 	for (auto chunkIndex : this->m_info->GetRenderableChunkListToRead())
 	{
-		if (this->m_info->chunks[chunkIndex.y][chunkIndex.x]->render_flag == false)
-			continue;
 		this->m_info->chunks[chunkIndex.y][chunkIndex.x]->setGeoRender(
 			d_graphic->getContext()
 		);
