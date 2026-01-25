@@ -48,6 +48,12 @@ void Map::resetChunk(Index2 const& c_idx)
 	_mapInfo.ResetChunk(c_idx);
 }
 
+/*
+* 지형 생성 -> 락프리 큐에 청크 인덱스를 저장
+* 각각의 스레드는 해당 청크 인덱스에서 빛 전파를 시행
+* 빛을 각각의 청크에 맞게 분배
+*/
+
 void Map::CreateMap()
 {
 	Index2 chunkIndex;
@@ -61,11 +67,11 @@ void Map::CreateMap()
 			chunkPos = _mapInfo.s_pos + Index2(j * 16, -i * 16);
 			chunkIndex = _mapInfo.getChunkIndex(chunkPos.x, chunkPos.y);
 			chunkList.push_back(chunkIndex);
-			_mapInfo.chunks[chunkIndex.y][chunkIndex.x] = make_unique<Chunk>(); // new delete는 lock을 걸음
+			_mapInfo.chunks[chunkIndex.y][chunkIndex.x] = make_unique<Chunk>();
 			_threadPool->SetTask([this, chunkIndex, chunkPos](int threadID) {this->t_system.CreateChunk(chunkIndex, chunkPos);});
 		}
 	}
-	_threadPool->Wait();
+	//_threadPool->Wait();
 	
 	_mapInfo.SetAdjChunkLightList(this->thread_cnt);
 	for (auto chunkIndex : chunkList)

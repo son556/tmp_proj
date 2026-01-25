@@ -17,7 +17,7 @@ public:
 	MemoryPool(int sizeHeight, int sizeWidth, vector<LockFreeQueue>& lockFreeQueueList);
 	~MemoryPool();
 	void ReturnToPool(Node* nodeHead, Node* nodeTail, int listSize);
-	Node* GetNode();
+	Node* GetNode(int& nodeCnt);
 
 private:
 	MemoryPool() = delete;
@@ -25,13 +25,13 @@ private:
 	MemoryPool& operator=(const MemoryPool&) = delete;
 
 private:
-	void FindFreeMemoryList(Node* head, Node* tail);
+	void FindFreeMemoryList(Node* &head, Node* &tail, int& memoryCnt);
 
 private:
 	vector<LockFreeQueue>& _queueList;
 	Node* _memoryArr;
-	alignas(64) atomic<Node*> _freeTail;
-	alignas(64) atomic<Node*> _freeHead;
-	alignas(64) atomic<int> _freeCnt;
+	alignas(std::hardware_destructive_interference_size) atomic<Node*> _freeTail;
+	alignas(std::hardware_destructive_interference_size) atomic<Node*> _freeHead;
+	alignas(std::hardware_destructive_interference_size) atomic<int> _freeCnt;
 };
 

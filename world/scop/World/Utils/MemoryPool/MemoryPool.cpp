@@ -38,42 +38,40 @@ void MemoryPool::ReturnToPool(Node* nodeHead, Node* nodeTail, int listSize)
 				if (tail->next.compare_exchange_weak(next, nodeHead))
 				{
 					_freeTail.compare_exchange_weak(tail, nodeTail);
+					nodeTail->next.store(nullptr, memory_order_relaxed);
 					_freeCnt.fetch_add(listSize);
+					return;
 				}
 			}
 			else
-				_freeTail.compare_exchange_weak(tail, tail->next);
+				_freeTail.compare_exchange_weak(tail, next);
 		}
 	}
-	_freeCnt.fetch_add(listSize);
 }
 
-Node* MemoryPool::GetNode()
+Node* MemoryPool::GetNode(int& nodeCnt)
 {
-	Node* nodeTail;
-	Node* nodeHead;
-	
-	FindFreeMemoryList(nodeHead, nodeTail);
+	Node* nodeTail = nullptr;
+	Node* nodeHead = nullptr;
 
-
-	//todo node list를 만들어서 반환
+	FindFreeMemoryList(nodeHead, nodeTail, nodeCnt);
 
 	return nodeHead;
 }
 
 // TODO memory order, memory barrier 공부
-// TODO 여기 완성시킬것 -> 완성 후 GetNode에 옮기기
-void MemoryPool::FindFreeMemoryList(Node* head, Node* tail)
+void MemoryPool::FindFreeMemoryList(Node* &head, Node* &tail, int& memoryCnt)
 {
 	Node* next;
 	int maxCnt = -1;
-	int nodeCnt;
+	int nodeCnt = 0;
 	int idx = -1;
 	int qIdx = 0;
 
 	tail = _freeHead.load();
 	tail = tail->next.load();
 
+	// 반환 할 list 만들기
 	for (int i = 0; i < TOTAL_NODE_COUNT; i++)
 	{
 		if (_freeCnt == 0)
@@ -92,11 +90,8 @@ void MemoryPool::FindFreeMemoryList(Node* head, Node* tail)
 				++qIdx;
 			}
 			if (idx > -1)
-			{
 				_queueList[idx].ReQuestReturnToPoolFreeNodeList();
-				_freeCnt.fetch_add(-maxCnt);
-			}
-			else
+			else // 모자란 경우 그대로 반환
 				break;
 		}
 		if (tail->next != nullptr)
@@ -104,14 +99,25 @@ void MemoryPool::FindFreeMemoryList(Node* head, Node* tail)
 		--_freeCnt;
 	}
 
-	// head 설정, _freeHead, _freeTail 변경
+	Node* step = head;
+
 	while (true)
 	{
 		head = _freeHead.load();
 		next = head->next.load();
 		if (head->next.compare_exchange_weak(next, tail->next))
 		{
-
+			if (_freeHead.compare_exchange_weak(head, tail->next))
+			{
+				tail->next = nullptr;
+				memoryCnt = 0;
+				while (step != nullptr)
+				{
+					++memoryCnt;
+					step = step->next;
+				}
+				return;
+			}
 		}
 	}
 }

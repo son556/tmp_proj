@@ -44,9 +44,8 @@ void LightSystem::SetLightAdjChunkInMain()
 * 2. 매니저 스레드 -> (adj 큐에 들어온 데이터를 확인 후 light_map에 옮겨 적음, chunk_cnt 가 0 이고 adj 큐의 크기가 0일 때 탈출)
 */
 
-// TODO 내 청크만 bfs 계산하고 다른 청크 넘어가는 경우는 따로 모아서 처리하는 방법?
 void LightSystem::lightBFS(queue<tuple<Index2, Index3, uint8>>& que, const int threadID, const Index2 nowChunkIndex)
-{ // 단점: 매 단계 Atomic 연산으로 인한 캐시 라인 경합(False Sharing) 및 무효화 비용이 매우 높음.
+{
 	Index2 s_cidx;
 	Index3 s_bidx;
 	Index2 n_cidx;
@@ -72,7 +71,7 @@ void LightSystem::lightBFS(queue<tuple<Index2, Index3, uint8>>& que, const int t
 			if (n_bidx.y > this->m_info->chunks[n_cidx.y][n_cidx.x]->max_h + 8)
 				continue;
 			block_type = this->m_info->findBlock(n_cidx, n_bidx);
-			if (block_type > 0 && block_type != BlockType::OAK_LEAVES)
+			if (block_type > 0)
 				continue;
 			
 			int idx = 16 * 16 * 256 * (n_cidx.x + this->m_info->size_w * n_cidx.y) + n_bidx.x + 16 * (n_bidx.z + 16 * n_bidx.y);
@@ -81,12 +80,6 @@ void LightSystem::lightBFS(queue<tuple<Index2, Index3, uint8>>& que, const int t
 			{
 				if (AtomicMax(this->m_info->getLight(idx), light - 1))
 					que.push({ n_cidx, n_bidx, light - 1 });
-				
-				//{ // test mutex
-				//	que.push({ n_cidx, n_bidx, light - 1 });
-				//	lock_guard legion_lock(test_mutex);
-				//	this->m_info->setLight(n_cidx, n_bidx, light - 1);
-				//}
 			}
 		}
 	}

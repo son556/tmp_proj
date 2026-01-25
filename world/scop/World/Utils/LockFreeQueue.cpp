@@ -24,29 +24,36 @@ void LockFreeQueue::EnQueue(int index, int lightValue)
     Node* head;
     Node* tail;
     Node* next;
-    Node* newNode;
+    Node* newNode = nullptr;
+    int nodeCnt;
+
+    // free node가 없는 경우
     if (_freeHead == nullptr)
     {
         lock_guard lock(_freeListMutex);
-        _freeHead = _memoryPool->GetNode();
-        _notUseCnt = 16 * 16 * 256;
+        _freeHead = _memoryPool->GetNode(nodeCnt);
+        _notUseCnt = nodeCnt;
     }
-    else
-    {
+    
+    { // free head에서 노드 1개를 가져옴
         lock_guard lock(_freeListMutex);
         newNode = _freeHead;
         _freeHead = newNode->next;
         _notUseCnt--;
+
+        newNode->lightIndex = index;
+        newNode->lightValue = lightValue;
+        newNode->next = nullptr;
     }
+
     while (true)
     {
         head = _head.load();
         tail = _tail.load();
-        next = tail->next;
         if (tail == _tail.load())
         {
-            tail->next = newNode;
-            tail->next.compare_exchange_week(tail->next, newNode);
+            next = tail->next.load();
+            tail->next.compare_exchange_weak(next, newNode);
             if (_tail.compare_exchange_weak(tail, newNode))
             {
                 return;
@@ -91,7 +98,7 @@ void LockFreeQueue::DeQueue(Index2& res)
                     ++_notUseCnt;
                     if (_notUseCnt == MAX_FREE_CNT)
                     {
-                        _memoryPool->ReturnToPool(_freeHead);
+                        _memoryPool->ReturnToPool(_freeHead, _freeTail, _notUseCnt);
                         _notUseCnt = 0;
                         _freeTail = nullptr;
                         _freeHead = nullptr;
